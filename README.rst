@@ -11,9 +11,8 @@ CentOS 7.
 You can install the application inside a virtualenv using the following
 instructions.
 
-To create a virtualenv, activate it and install dependencies as well as the package itself, run
+To create a virtualenv, activate it and install dependencies as well as the package itself, run::
 
-::
     python3 -m venv venv
     source venv/bin/activate
     pip install --upgrade pip setuptools
