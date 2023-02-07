@@ -1,0 +1,23 @@
+---
+
+variables:
+  CI_PYTHON_3: "yes"
+  # CI_PYTHON_2_VENV: "yes"
+  # CI_COVERAGE_SYSTEM: "yes"
+  # ANSIBLE_UNIT_TEST: ""
+  # CI_FORCE_DISTRIBUTED_E2E: "yes"
+  # CI_SKIP_STATIC_ANALYSIS: "yes"
+  # CI_SKIP_RPM_BUILD: "yes"
+  # CI_SKIP_SYSTEM_UNIT_TESTS: "yes"
+  # CI_SKIP_VENV_UNIT_TESTS: "yes"
+  # CI_SKIP_COVERAGE: "yes"
+  # CI_ADDITIONAL_UNIT_TEST_PROJECT: ""
+
+include:
+  - project: 'dpres/gitlab-ci-pipeline'
+    ref: master
+    file:
+      - '/pipeline/common.yml'
+      # - '/pipeline/fddps.yml'
+      # - '/pipeline/kppas.yml'
+      # - '/pipeline/sapa.yml'
