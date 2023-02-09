@@ -1,2 +1,5 @@
 # Testing requirements
 pytest
+
+# Code dependencies
+git+https://gitlab.ci.csc.fi/dpres/dpres-mets-builder.git@develop#egg=dpres-mets-builder

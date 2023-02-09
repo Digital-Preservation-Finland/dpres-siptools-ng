@@ -22,6 +22,7 @@ BuildRequires:  python36-pytest
 BuildRequires:  python36-setuptools_scm
 Requires:       python3
 Requires:       python3-setuptools
+Requires:       python3-dpres-mets-builder
 
 %description
 Library for creating Submission Information Packages (SIP) that comply to the specifications of national digital preservation services of Finland.
