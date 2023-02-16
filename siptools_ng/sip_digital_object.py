@@ -50,10 +50,10 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         """
         self.source_filepath = Path(source_filepath)
-        if not self.source_filepath.exists():
+        if not self.source_filepath.is_file():
             raise ValueError(
-                f"Source file '{source_filepath}' for the digital object does "
-                "not exist."
+                f"Source filepath '{source_filepath}' for the digital object "
+                "is not a file."
             )
 
         super().__init__(
