@@ -15,7 +15,6 @@ class SIP:
         """Constructor for SIP class.
 
         :param mets: METS object representing the METS file of this SIP.
-        :type mets: METS
         """
         self.mets = mets
 
@@ -23,7 +22,6 @@ class SIP:
         """Build the SIP.
 
         :param output_filepath: Path where the SIP is built to.
-        :type output_filepath: Union[str, Path]
         """
         if len(self.mets.digital_objects) == 0:
             raise ValueError("SIP does not contain any digital objects.")
@@ -39,7 +37,6 @@ class SIP:
 
         :param output_filepath: Path to the directory where to write the METS
             file.
-        :type output_filepath: Path
         """
         mets_filepath = output_filepath / METS_FILENAME
         self.mets.write(mets_filepath)
@@ -48,7 +45,6 @@ class SIP:
         """Copy the digital objects to their target location in the SIP.
 
         :param output_filepath: Filepath where the SIP is created to.
-        :type output_filepath: Path
         """
         for digital_object in self.mets.digital_objects:
             digital_object_parent_dir = (

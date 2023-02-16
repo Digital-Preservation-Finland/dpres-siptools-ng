@@ -30,24 +30,18 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         :param source_filepath: File path of the local source file for this
             digital object.
-        :type source_filepath: Union[str, Path]
         :param sip_filepath: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
-        :type sip_filepath: Union[str, Path]
         :param metadata: Iterable of metadata objects that describe this
             stream. Note that the metadata should be administrative metadata,
             and any descriptive metadata of a digital object should be added to
             a div in a structural map.
-        :type metadata: Iterable[MetadataBase], optional
         :param streams: Iterable of DigitalObjectStreams, representing the
             streams of this digital object.
-        :type streams: Iterable[DigitalObjectStream], optional
         :param str identifier: Identifier for the digital object. The
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
-        :type identifier: str, optional
-
         """
         self.source_filepath = Path(source_filepath)
         if not self.source_filepath.is_file():
