@@ -22,7 +22,9 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             None
         ),
         streams: Optional[Iterable[mets_builder.DigitalObjectStream]] = None,
-        identifier: Optional[str] = None
+        identifier: Optional[str] = None,
+        *args,
+        **kwargs
     ) -> None:
         """Constructor for SIPDigitalObject.
 
@@ -58,5 +60,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             sip_filepath=sip_filepath,
             metadata=metadata,
             streams=streams,
-            identifier=identifier
+            identifier=identifier,
+            *args,
+            **kwargs
         )
