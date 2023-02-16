@@ -3,3 +3,9 @@ pytest
 
 # Code dependencies
 git+https://gitlab.ci.csc.fi/dpres/dpres-mets-builder.git@develop#egg=dpres-mets-builder
+
+# TODO: These can be dropped when we move to newer pip
+# mets_builder transitive dependencies
+git+https://gitlab.ci.csc.fi/dpres/mets.git@develop#egg=mets
+git+https://gitlab.ci.csc.fi/dpres/nisomix.git@develop#egg=nisomix
+git+https://gitlab.ci.csc.fi/dpres/xml-helpers.git@develop#egg=xml-helpers
