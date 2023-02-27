@@ -3,9 +3,11 @@ import shutil
 from pathlib import Path
 from typing import Union
 
+import dpres_signature.signature
 import mets_builder
 
 METS_FILENAME = "mets.xml"
+SIGNATURE_FILENAME = "signature.sig"
 
 
 class SIP:
@@ -18,10 +20,16 @@ class SIP:
         """
         self.mets = mets
 
-    def finalize(self, output_filepath: Union[str, Path]) -> None:
+    def finalize(
+        self,
+        output_filepath: Union[str, Path],
+        sign_key_filepath: Union[str, Path],
+    ) -> None:
         """Build the SIP.
 
         :param output_filepath: Path where the SIP is built to.
+        :param sign_key_filepath: Path to the signature key file that is used
+            to sign the SIP.
         """
         if len(self.mets.digital_objects) == 0:
             raise ValueError("SIP does not contain any digital objects.")
@@ -31,6 +39,7 @@ class SIP:
 
         self._write_mets_to_sip(output_filepath)
         self._copy_digital_objects_to_sip(output_filepath)
+        self._sign_mets(output_filepath, str(sign_key_filepath))
 
     def _write_mets_to_sip(self, output_filepath: Path) -> None:
         """Write the METS object to its target location in the SIP.
@@ -56,3 +65,24 @@ class SIP:
                str(digital_object.source_filepath),
                str(output_filepath / digital_object.sip_filepath)
             )
+
+    def _sign_mets(
+        self,
+        output_filepath: Path,
+        sign_key_filepath: str
+    ) -> None:
+        """Sign the SIP METS document.
+
+        Assumes that given output_filepath contains a METS document named
+        'mets.xml'.
+
+        :param output_filepath: Path to the directory where to write the
+            signature file.
+        :param sign_key_filepath: Path to the signature key file.
+        """
+        signature = dpres_signature.signature.create_signature(
+            output_filepath, sign_key_filepath, [METS_FILENAME]
+        )
+
+        signature_filepath = output_filepath / SIGNATURE_FILENAME
+        signature_filepath.write_bytes(signature)
