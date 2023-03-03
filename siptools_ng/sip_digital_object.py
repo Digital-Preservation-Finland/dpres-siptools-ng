@@ -29,7 +29,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """Constructor for SIPDigitalObject.
 
         :param source_filepath: File path of the local source file for this
-            digital object.
+            digital object. Symbolic links in the path are resolved.
         :param sip_filepath: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
@@ -43,7 +43,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
         """
-        self.source_filepath = Path(source_filepath)
+        self.source_filepath = Path(source_filepath).resolve()
         if not self.source_filepath.is_file():
             raise ValueError(
                 f"Source filepath '{source_filepath}' for the digital object "
