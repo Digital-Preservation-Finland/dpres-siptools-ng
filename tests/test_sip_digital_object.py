@@ -20,10 +20,7 @@ def test_digital_object_source_filepath_validity(source_filepath):
             source_filepath=source_filepath,
             sip_filepath="sip_data/test_file.txt"
         )
-    assert str(error.value) == (
-        f"Source filepath '{source_filepath}' for the digital object is not a "
-        "file."
-    )
+    assert "is not a file." in str(error.value)
 
 
 def test_resolve_symbolic_link_as_source_filepath():

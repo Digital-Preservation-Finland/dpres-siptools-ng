@@ -43,12 +43,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
         """
-        self.source_filepath = Path(source_filepath).resolve()
-        if not self.source_filepath.is_file():
-            raise ValueError(
-                f"Source filepath '{source_filepath}' for the digital object "
-                "is not a file."
-            )
+        self.source_filepath = Path(source_filepath)
 
         super().__init__(
             sip_filepath=sip_filepath,
@@ -58,3 +53,24 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             *args,
             **kwargs
         )
+
+    @property
+    def source_filepath(self) -> Path:
+        """Getter for source_filepath."""
+        return self._source_filepath
+
+    @source_filepath.setter
+    def source_filepath(self, source_filepath):
+        """Setter for source_filepath."""
+        source_filepath = Path(source_filepath)
+
+        # Resolve symbolic links in path
+        source_filepath = source_filepath.resolve()
+
+        if not source_filepath.is_file():
+            raise ValueError(
+                f"Source filepath '{source_filepath}' for the digital object "
+                "is not a file."
+            )
+
+        self._source_filepath = source_filepath
