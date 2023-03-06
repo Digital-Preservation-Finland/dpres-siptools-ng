@@ -70,10 +70,12 @@ def test_mets_in_sip(tmp_path):
     mets.generate_file_references()
 
     sip = SIP(mets=mets)
-    output_filepath = tmp_path / "test_mets_in_sip"
+    output_filepath = tmp_path / "test_mets_in_sip_output"
+    tmp_filepath = tmp_path / "test_mets_in_sip_tmp"
     sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt"
+        sign_key_filepath="tests/data/rsa-keys.crt",
+        tmp_filepath=tmp_filepath
     )
 
     mets_filepath = output_filepath / "mets.xml"
@@ -107,10 +109,12 @@ def test_file_location_in_sip(tmp_path):
     mets.generate_file_references()
 
     sip = SIP(mets=mets)
-    output_filepath = tmp_path / "test_file_location_in_sip"
+    output_filepath = tmp_path / "test_file_location_in_sip_output"
+    tmp_filepath = tmp_path / "test_file_location_in_sip_tmp"
     sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt"
+        sign_key_filepath="tests/data/rsa-keys.crt",
+        tmp_filepath=tmp_filepath
     )
 
     assert output_filepath.is_dir()
@@ -146,10 +150,12 @@ def test_signature_in_sip(tmp_path):
     mets.generate_file_references()
 
     sip = SIP(mets=mets)
-    output_filepath = tmp_path / "test_signature_in_sip"
+    output_filepath = tmp_path / "test_signature_in_sip_output"
+    tmp_filepath = tmp_path / "test_signature_in_sip_tmp"
     sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt"
+        sign_key_filepath="tests/data/rsa-keys.crt",
+        tmp_filepath=tmp_filepath
     )
 
     signature_filepath = output_filepath / "signature.sig"
@@ -158,3 +164,36 @@ def test_signature_in_sip(tmp_path):
     mets_filepath = output_filepath / "mets.xml"
     sha_hash = hashlib.sha1(mets_filepath.read_bytes()).hexdigest()
     assert f"mets.xml:sha1:{sha_hash}" in signature_filepath.read_text("utf-8")
+
+
+def test_tmp_filepath_for_sip_finalization(tmp_path):
+    """Test that user defined temporary path is used for temporary files when
+    finalizing SIP.
+    """
+    mets = METS(
+        mets_profile=MetsProfile.CULTURAL_HERITAGE,
+        contract_id="contract_id",
+        creator_name="Mr. Foo"
+    )
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="test_file.txt"
+    )
+    root_div = StructuralMapDiv("test_div", digital_objects=[digital_object])
+    structural_map = StructuralMap(root_div=root_div)
+    mets.add_structural_map(structural_map)
+    mets.generate_file_references()
+
+    sip = SIP(mets=mets)
+    output_filepath = (
+        tmp_path / "test_mets_filepath_for_sip_finalization_output"
+    )
+    tmp_filepath = tmp_path / "test_mets_filepath_for_sip_finalization_tmp"
+
+    sip.finalize(
+        output_filepath=output_filepath,
+        sign_key_filepath="tests/data/rsa-keys.crt",
+        tmp_filepath=tmp_filepath
+    )
+    assert (tmp_filepath / "mets.xml").is_file()
+    assert (tmp_filepath / "signature.sig").is_file()
