@@ -29,6 +29,12 @@ class SIP:
     ) -> None:
         """Build the SIP.
 
+        The SIP will be built to the given output filepath, packed as a tar
+        file. The SIP will contain the METS object of this SIP object
+        serialized as an XML file, a signature file that signs the serialized
+        METS document, and the digital objects declared in the METS object of
+        this SIP object.
+
         :param output_filepath: Path where the SIP is built to.
         :param sign_key_filepath: Path to the signature key file that is used
             to sign the SIP.
