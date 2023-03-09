@@ -34,6 +34,8 @@ class SIP:
         METS document, and the digital objects declared in the METS object of
         this SIP object.
 
+        The SIP will appear with '.tmp' suffix until finished.
+
         :param output_filepath: Path where the SIP is built to.
         :param sign_key_filepath: Path to the signature key file that is used
             to sign the SIP.
@@ -49,11 +51,12 @@ class SIP:
 
         with tempfile.TemporaryDirectory(prefix="siptools-ng_") as tmp_dir:
             tmp_path = Path(tmp_dir)
+
             mets_tmp_filepath = self._write_mets(tmp_path)
             signature_tmp_filepath = self._write_signature(
                 tmp_path, str(sign_key_filepath)
             )
-            self._pack_files_to_tar(
+            self._write_sip(
                 output_filepath, mets_tmp_filepath, signature_tmp_filepath
             )
 
@@ -94,23 +97,26 @@ class SIP:
         signature_filepath.write_bytes(signature)
         return signature_filepath
 
-    def _pack_files_to_tar(
+    def _write_sip(
         self,
         output_filepath: Path,
         mets_filepath: Path,
         signature_filepath: Path
     ) -> None:
-        """Pack contents of the SIP to a tar file.
+        """Write contents of the SIP to a tar file.
 
-        Packs the METS document, signature file and digital objects of the SIP.
+        Writes the METS document, signature file and digital objects of the
+        SIP, packing them into a tar file. The SIP will be written to the given
+        output path, appearing with '.tmp' suffix until finished.
 
-        :param output_filepath: Filepath where the packed SIP is written to.
+        :param output_filepath: Path where the SIP is written to.
         :param mets_filepath: Filepath to the METS document (written in
             advance) that is included in this SIP.
         :param signature_filepath: Filepath to the signature file (written in
             advance) that is included in this SIP.
         """
-        with tarfile.open(output_filepath, "w") as tarred_sip:
+        tmp_sip_filepath = Path(f"{output_filepath}.tmp")
+        with tarfile.open(tmp_sip_filepath, "w") as tarred_sip:
             tarred_sip.add(name=mets_filepath, arcname=METS_FILENAME)
             tarred_sip.add(name=signature_filepath, arcname=SIGNATURE_FILENAME)
             for digital_object in self.mets.digital_objects:
@@ -118,3 +124,5 @@ class SIP:
                     name=digital_object.source_filepath,
                     arcname=digital_object.sip_filepath
                 )
+
+        tmp_sip_filepath.rename(output_filepath)
