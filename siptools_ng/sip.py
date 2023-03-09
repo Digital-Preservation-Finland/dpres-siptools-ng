@@ -1,6 +1,6 @@
 """Module for Submission Information Package (SIP) handling."""
 import tarfile
-from datetime import datetime
+import tempfile
 from pathlib import Path
 from typing import Union
 
@@ -24,8 +24,7 @@ class SIP:
     def finalize(
         self,
         output_filepath: Union[str, Path],
-        sign_key_filepath: Union[str, Path],
-        tmp_filepath: Union[str, Path, None] = None
+        sign_key_filepath: Union[str, Path]
     ) -> None:
         """Build the SIP.
 
@@ -38,8 +37,6 @@ class SIP:
         :param output_filepath: Path where the SIP is built to.
         :param sign_key_filepath: Path to the signature key file that is used
             to sign the SIP.
-        :param tmp_filepath: Path where temporary files are stored. If None,
-            path is set to '/tmp/siptools-ng/YYYY-MM-DDTHH:MM:SS'.
         """
         if len(self.mets.digital_objects) == 0:
             raise ValueError("SIP does not contain any digital objects.")
@@ -50,21 +47,15 @@ class SIP:
                 f"Given output filepath '{output_filepath}' exists already."
             )
 
-        if tmp_filepath is None:
-            current_time = datetime.now().isoformat(timespec="seconds")
-            tmp_filepath = Path("/tmp/siptools-ng") / current_time
-        tmp_filepath = Path(tmp_filepath)
-        tmp_filepath.mkdir(parents=True)
-
-        mets_tmp_filepath = self._write_mets(tmp_filepath)
-
-        signature_tmp_filepath = self._write_signature(
-            tmp_filepath, str(sign_key_filepath)
-        )
-
-        self._pack_files_to_tar(
-            output_filepath, mets_tmp_filepath, signature_tmp_filepath
-        )
+        with tempfile.TemporaryDirectory(prefix="siptools-ng_") as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            mets_tmp_filepath = self._write_mets(tmp_path)
+            signature_tmp_filepath = self._write_signature(
+                tmp_path, str(sign_key_filepath)
+            )
+            self._pack_files_to_tar(
+                output_filepath, mets_tmp_filepath, signature_tmp_filepath
+            )
 
     def _write_mets(self, output_directory: Path) -> Path:
         """Write the METS document to given directory.

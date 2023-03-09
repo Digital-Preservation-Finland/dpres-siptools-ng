@@ -20,9 +20,8 @@ def _get_testing_filepaths(tmp_path_of_test):
     location.
     """
     output_filepath = tmp_path_of_test / "finalized_sip.tar"
-    tmp_filepath = tmp_path_of_test / "tmp_files"
     extracted_filepath = tmp_path_of_test / "extracted_sip"
-    return output_filepath, tmp_filepath, extracted_filepath
+    return output_filepath, extracted_filepath
 
 
 def test_creating_sip_with_zero_files():
@@ -58,13 +57,11 @@ def test_creating_sip_to_existing_filepath(simple_sip):
 
 def test_mets_in_sip(tmp_path, simple_sip):
     """Test that the finalized SIP has a METS file in it."""
-    output_filepath, tmp_filepath, extracted_filepath = \
-        _get_testing_filepaths(tmp_path)
+    output_filepath, extracted_filepath = _get_testing_filepaths(tmp_path)
 
     simple_sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt",
-        tmp_filepath=tmp_filepath
+        sign_key_filepath="tests/data/rsa-keys.crt"
     )
 
     _extract_sip(output_filepath, extracted_filepath)
@@ -80,8 +77,7 @@ def test_file_location_in_sip(tmp_path):
     """Test that digital objects are copied to the right path in the finalized
     SIP.
     """
-    output_filepath, tmp_filepath, extracted_filepath = \
-        _get_testing_filepaths(tmp_path)
+    output_filepath, extracted_filepath = _get_testing_filepaths(tmp_path)
 
     mets = METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
@@ -105,8 +101,7 @@ def test_file_location_in_sip(tmp_path):
     sip = SIP(mets=mets)
     sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt",
-        tmp_filepath=tmp_filepath
+        sign_key_filepath="tests/data/rsa-keys.crt"
     )
 
     _extract_sip(output_filepath, extracted_filepath)
@@ -123,13 +118,11 @@ def test_signature_in_sip(tmp_path, simple_sip):
     """Test that the finalized SIP has a signature file with a correct sha sum
     for the METS file in it.
     """
-    output_filepath, tmp_filepath, extracted_filepath = \
-        _get_testing_filepaths(tmp_path)
+    output_filepath, extracted_filepath = _get_testing_filepaths(tmp_path)
 
     simple_sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt",
-        tmp_filepath=tmp_filepath
+        sign_key_filepath="tests/data/rsa-keys.crt"
     )
 
     _extract_sip(output_filepath, extracted_filepath)
@@ -142,28 +135,12 @@ def test_signature_in_sip(tmp_path, simple_sip):
     assert f"mets.xml:sha1:{sha_hash}" in signature_filepath.read_text("utf-8")
 
 
-def test_tmp_filepath_for_sip_finalization(tmp_path, simple_sip):
-    """Test that user defined temporary path is used for temporary files when
-    finalizing SIP.
-    """
-    output_filepath, tmp_filepath, _ = _get_testing_filepaths(tmp_path)
-
-    simple_sip.finalize(
-        output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt",
-        tmp_filepath=tmp_filepath
-    )
-    assert (tmp_filepath / "mets.xml").is_file()
-    assert (tmp_filepath / "signature.sig").is_file()
-
-
 def test_sip_is_tar_file(tmp_path, simple_sip):
     """Test that the finalized SIP is a tar file."""
-    output_filepath, tmp_filepath, _ = _get_testing_filepaths(tmp_path)
+    output_filepath, _ = _get_testing_filepaths(tmp_path)
 
     simple_sip.finalize(
         output_filepath=output_filepath,
-        sign_key_filepath="tests/data/rsa-keys.crt",
-        tmp_filepath=tmp_filepath
+        sign_key_filepath="tests/data/rsa-keys.crt"
     )
     assert tarfile.is_tarfile(output_filepath)
