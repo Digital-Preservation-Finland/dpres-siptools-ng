@@ -1,8 +1,12 @@
 """Module for handling digital objects in SIP."""
+import os.path
+import platform
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional, Union
 
 import mets_builder
+from file_scraper.scraper import Scraper
 
 
 class SIPDigitalObject(mets_builder.DigitalObject):
@@ -74,3 +78,56 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             )
 
         self._source_filepath = source_filepath
+
+    def _file_creation_date(self, filepath: Path) -> str:
+        """Return creation date for file.
+
+        Try to get the date that a file was created, falling back to when it
+        was last modified if that isn't possible. See
+        http://stackoverflow.com/a/39501288/1709587 for explanation.
+
+        :param filepath: Path to the file.
+
+        :returns: Timestamp for the creation date of the file, or for the last
+            modification date if the creation date is not found.
+        """
+        if platform.system() == "Windows":
+            creation_date = datetime.fromtimestamp(os.path.getctime(filepath))
+        else:
+            stat = os.stat(filepath)
+            try:
+                # Some Unix systems such as macOS might have birthtime defined
+                creation_date = datetime.fromtimestamp(
+                    stat.st_birthtime  # type:ignore
+                )
+            except AttributeError:
+                # We're probably on Linux. No easy way to get creation dates
+                # here, so we'll settle for when its content was last modified.
+                creation_date = datetime.fromtimestamp(stat.st_mtime)
+
+        return creation_date.isoformat(timespec="seconds")
+
+    def generate_technical_metadata(self) -> None:
+        """Generate technical object metadata for this digital object.
+
+        Scrapes the file found in SIPDigitalObject.source_filepath, turning the
+        scraped information into a
+        mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
+        the metadata to this digital object.
+        """
+        scraper = Scraper(filename=str(self.source_filepath))
+        scraper.scrape(check_wellformed=False)
+        # TODO: Handle streams, do not assume object has only one stream
+        stream = scraper.streams[0]
+
+        technical_metadata = mets_builder.metadata.TechnicalObjectMetadata(
+            file_format=scraper.mimetype,
+            file_format_version=scraper.version,
+            checksum_algorithm="MD5",
+            checksum=scraper.checksum(algorithm="MD5"),
+            file_created_date=self._file_creation_date(self.source_filepath),
+            charset=stream.get("charset", None),
+            original_name=self.source_filepath.name
+        )
+
+        self.add_metadata(technical_metadata)
