@@ -24,6 +24,7 @@ Requires:       python3
 Requires:       python3-setuptools
 Requires:       python3-dpres-mets-builder
 Requires:       python3-dpres-signature
+Requires:       python3-file-scraper-full
 
 %description
 Library for creating Submission Information Packages (SIP) that comply to the specifications of national digital preservation services of Finland.
