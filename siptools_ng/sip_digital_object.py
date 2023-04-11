@@ -1,5 +1,4 @@
 """Module for handling digital objects in SIP."""
-import os.path
 import platform
 from datetime import datetime
 from pathlib import Path
@@ -91,10 +90,11 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         :returns: Timestamp for the creation date of the file, or for the last
             modification date if the creation date is not found.
         """
+        stat = filepath.stat()
+
         if platform.system() == "Windows":
-            creation_date = datetime.fromtimestamp(os.path.getctime(filepath))
+            creation_date = datetime.fromtimestamp(stat.st_ctime)
         else:
-            stat = os.stat(filepath)
             try:
                 # Some Unix systems such as macOS might have birthtime defined
                 creation_date = datetime.fromtimestamp(
