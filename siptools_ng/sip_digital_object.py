@@ -119,6 +119,9 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         scraped information into a
         mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
         the metadata to this digital object.
+
+        For images also mets_builder.metadata.TechnicalImageMetadata object is
+        created and added to the digital object.
         """
         if self._technical_metadata_generated:
             raise MetadataGenerationError(
@@ -140,6 +143,12 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             charset=stream.get("charset", None),
             original_name=self.source_filepath.name
         )
-
         self.add_metadata(technical_metadata)
+
+        # TODO: Generate specified technical metadata for other stream_types as
+        # well than just for images
+        if stream["stream_type"] == "image":
+            metadata = mets_builder.metadata.TechnicalImageMetadata(**stream)
+            self.add_metadata(metadata)
+
         self._technical_metadata_generated = True

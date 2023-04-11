@@ -2,6 +2,8 @@
 from datetime import datetime
 
 import pytest
+from mets_builder.metadata import (TechnicalImageMetadata,
+                                   TechnicalObjectMetadata)
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
                                             SIPDigitalObject)
@@ -79,9 +81,13 @@ def test_generating_technical_metadata_for_image():
 
     digital_object.generate_technical_metadata()
 
-    assert len(digital_object.metadata) == 1
-    metadata = digital_object.metadata.pop()
+    assert len(digital_object.metadata) == 2
 
+    # Technical object metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if type(data) == TechnicalObjectMetadata
+    ][0]
     assert metadata.file_format == "image/tiff"
     assert metadata.file_format_version == "6.0"
     assert metadata.charset is None
@@ -96,6 +102,22 @@ def test_generating_technical_metadata_for_image():
     format_string = "%Y-%m-%dT%H:%M:%S"
     # Raises error if file_created_date doesn't follow the right format
     datetime.strptime(metadata.file_created_date, format_string)
+
+    # Technical image metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if type(data) == TechnicalImageMetadata
+    ][0]
+    assert metadata.compression == "zip"
+    assert metadata.colorspace == "rgb"
+    assert metadata.width == "10"
+    assert metadata.height == "6"
+    assert metadata.bps_value == "8"
+    assert metadata.bps_unit == "integer"
+    assert metadata.samples_per_pixel == "3"
+    assert metadata.mimetype == "image/tiff"
+    assert metadata.byte_order == "little endian"
+    assert metadata.icc_profile_name == "(:unav)"
 
 
 def test_generating_technical_metadata_multiple_times():
