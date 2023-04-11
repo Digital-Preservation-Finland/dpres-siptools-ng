@@ -8,6 +8,10 @@ import mets_builder
 from file_scraper.scraper import Scraper
 
 
+class MetadataGenerationError(Exception):
+    """Error raised when there is an error in metadata generation."""
+
+
 class SIPDigitalObject(mets_builder.DigitalObject):
     """Class for handling digital objects in SIPs.
 
@@ -47,6 +51,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             identifier is generated automatically.
         """
         self.source_filepath = Path(source_filepath)
+        self._technical_metadata_generated = False
 
         super().__init__(
             sip_filepath=sip_filepath,
@@ -115,6 +120,12 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
         the metadata to this digital object.
         """
+        if self._technical_metadata_generated:
+            raise MetadataGenerationError(
+                "Technical metadata has already been generated for the "
+                "digital object."
+            )
+
         scraper = Scraper(filename=str(self.source_filepath))
         scraper.scrape(check_wellformed=False)
         # TODO: Handle streams, do not assume object has only one stream
@@ -131,3 +142,4 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         )
 
         self.add_metadata(technical_metadata)
+        self._technical_metadata_generated = True

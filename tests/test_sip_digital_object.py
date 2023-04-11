@@ -3,7 +3,8 @@ from datetime import datetime
 
 import pytest
 
-from siptools_ng.sip_digital_object import SIPDigitalObject
+from siptools_ng.sip_digital_object import (MetadataGenerationError,
+                                            SIPDigitalObject)
 
 
 @pytest.mark.parametrize(
@@ -95,3 +96,20 @@ def test_generating_technical_metadata_for_image():
     format_string = "%Y-%m-%dT%H:%M:%S"
     # Raises error if file_created_date doesn't follow the right format
     datetime.strptime(metadata.file_created_date, format_string)
+
+
+def test_generating_technical_metadata_multiple_times():
+    """Test that it is not possible to generate technical metadata multiple
+    times.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_file.txt"
+    )
+    digital_object.generate_technical_metadata()
+
+    with pytest.raises(MetadataGenerationError) as error:
+        digital_object.generate_technical_metadata()
+    assert str(error.value) == (
+        "Technical metadata has already been generated for the digital object."
+    )
