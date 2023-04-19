@@ -29,7 +29,8 @@ def test_creating_sip_with_zero_files():
     mets = METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
         contract_id="contract_id",
-        creator_name="Mr. Foo"
+        creator_name="Mr. Foo",
+        creator_type="INDIVIDUAL"
     )
     sip = SIP(mets=mets)
 
@@ -82,7 +83,8 @@ def test_file_location_in_sip(tmp_path):
     mets = METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
         contract_id="contract_id",
-        creator_name="Mr. Foo"
+        creator_name="Mr. Foo",
+        creator_type="INDIVIDUAL"
     )
     digital_object_1 = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",

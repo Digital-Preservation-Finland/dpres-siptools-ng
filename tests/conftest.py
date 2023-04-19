@@ -27,7 +27,8 @@ def simple_sip():
     mets = METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
         contract_id="contract_id",
-        creator_name="Mr. Foo"
+        creator_name="Mr. Foo",
+        creator_type="INDIVIDUAL"
     )
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
