@@ -12,3 +12,4 @@ git+https://gitlab.ci.csc.fi/dpres/mets.git@develop#egg=mets
 git+https://gitlab.ci.csc.fi/dpres/nisomix.git@develop#egg=nisomix
 git+https://gitlab.ci.csc.fi/dpres/xml-helpers.git@develop#egg=xml-helpers
 git+https://gitlab.ci.csc.fi/dpres/premis.git@develop#egg=premis
+git+https://gitlab.ci.csc.fi/dpres/audiomd.git@develop#egg=audiomd
