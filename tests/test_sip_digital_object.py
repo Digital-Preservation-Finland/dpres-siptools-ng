@@ -2,7 +2,8 @@
 from datetime import datetime
 
 import pytest
-from mets_builder.metadata import (TechnicalImageMetadata,
+from mets_builder.metadata import (TechnicalAudioMetadata,
+                                   TechnicalImageMetadata,
                                    TechnicalObjectMetadata)
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
@@ -135,3 +136,54 @@ def test_generating_technical_metadata_multiple_times():
     assert str(error.value) == (
         "Technical metadata has already been generated for the digital object."
     )
+
+
+def test_generating_technical_metadata_for_audio():
+    """Test that generating technical metadata for an audioo file results in
+    correct information.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_audio.wav",
+        sip_filepath="sip_data/test_audio.wav"
+    )
+
+    digital_object.generate_technical_metadata()
+
+    assert len(digital_object.metadata) == 2
+
+    # Technical object metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalObjectMetadata)
+    ][0]
+    assert metadata.file_format == "audio/x-wav"
+    assert metadata.file_format_version == "(:unap)"
+    assert metadata.charset is None
+    assert metadata.checksum_algorithm.value == "MD5"
+    assert metadata.checksum == "cd14de04e3490de9f6f234fb10cd4885"
+    assert metadata.original_name == "test_audio.wav"
+
+    # File creation date cannot be tested with hardcoded time, because it will
+    # differ according to when the user has cloned the repository (and created
+    # the test file while doing so). Settle for testing that file creation date
+    # is in ISO format
+    format_string = "%Y-%m-%dT%H:%M:%S"
+    # Raises error if file_created_date doesn't follow the right format
+    datetime.strptime(metadata.file_created_date, format_string)
+
+    # Technical audio metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalAudioMetadata)
+    ][0]
+    assert metadata.audio_data_encoding == "PCM"
+    assert metadata.bits_per_sample == "8"
+    assert metadata.codec_creator_app == "Lavf56.40.101"
+    assert metadata.codec_creator_app_version == "56.40.101"
+    assert metadata.codec_name == "PCM"
+    assert metadata.codec_quality.value == "lossless"
+    assert metadata.data_rate == "706"
+    assert metadata.data_rate_mode.value == "Fixed"
+    assert metadata.sampling_frequency == "44.1"
+    assert metadata.duration == "PT0.86S"
+    assert metadata.num_channels == "2"

@@ -146,9 +146,12 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         self.add_metadata(technical_metadata)
 
         # TODO: Generate specified technical metadata for other stream_types as
-        # well than just for images
+        # well than just for images and audio
         if stream["stream_type"] == "image":
             metadata = mets_builder.metadata.TechnicalImageMetadata(**stream)
+            self.add_metadata(metadata)
+        if stream["stream_type"] == "audio":
+            metadata = mets_builder.metadata.TechnicalAudioMetadata(**stream)
             self.add_metadata(metadata)
 
         self._technical_metadata_generated = True
