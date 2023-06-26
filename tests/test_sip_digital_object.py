@@ -86,7 +86,7 @@ def test_generating_technical_metadata_for_image():
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
-        if type(data) == TechnicalObjectMetadata
+        if isinstance(data, TechnicalObjectMetadata)
     ][0]
     assert metadata.file_format == "image/tiff"
     assert metadata.file_format_version == "6.0"
@@ -106,7 +106,7 @@ def test_generating_technical_metadata_for_image():
     # Technical image metadata
     metadata = [
         data for data in digital_object.metadata
-        if type(data) == TechnicalImageMetadata
+        if isinstance(data, TechnicalImageMetadata)
     ][0]
     assert metadata.compression == "zip"
     assert metadata.colorspace == "rgb"
