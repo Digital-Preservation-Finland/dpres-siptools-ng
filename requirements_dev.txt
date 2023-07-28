@@ -4,7 +4,7 @@ pytest
 # Code dependencies
 git+https://gitlab.ci.csc.fi/dpres/dpres-mets-builder.git@develop#egg=dpres-mets-builder
 git+https://gitlab.ci.csc.fi/dpres/dpres-signature.git@develop#egg=dpres-signature
-git+https://gitlab.ci.csc.fi/dpres/file-scraper.git@develop#egg=file-scraper
+git+https://gitlab.ci.csc.fi/dpres/file-scraper.git@develop#egg=file_scraper
 
 # TODO: These can be dropped when we move to newer pip
 # mets_builder transitive dependencies
