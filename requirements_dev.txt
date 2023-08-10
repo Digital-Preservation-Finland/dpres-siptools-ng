@@ -6,11 +6,14 @@ git+https://gitlab.ci.csc.fi/dpres/dpres-mets-builder.git@develop#egg=dpres-mets
 git+https://gitlab.ci.csc.fi/dpres/dpres-signature.git@develop#egg=dpres-signature
 git+https://gitlab.ci.csc.fi/dpres/file-scraper.git@develop#egg=file_scraper
 
-# TODO: These can be dropped when we move to newer pip
+# TODO: The transitive dependencies can be dropped when we move to newer pip
 # mets_builder transitive dependencies
 git+https://gitlab.ci.csc.fi/dpres/mets.git@develop#egg=mets
 git+https://gitlab.ci.csc.fi/dpres/nisomix.git@develop#egg=nisomix
 git+https://gitlab.ci.csc.fi/dpres/xml-helpers.git@develop#egg=xml-helpers
 git+https://gitlab.ci.csc.fi/dpres/premis.git@develop#egg=premis
 git+https://gitlab.ci.csc.fi/dpres/audiomd.git@develop#egg=audiomd
+
+# file-scraper transitive dependencies
 git+https://gitlab.ci.csc.fi/dpres/fido.git@develop#egg=opf_fido
+git+https://gitlab.ci.csc.fi/dpres/ffmpeg-python.git#egg=ffmpeg_python
