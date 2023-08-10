@@ -36,11 +36,6 @@ Summary: %{summary}
 Requires:       %{py3_dist dpres-mets-builder}
 Requires:       python3-file-scraper-full
 Requires:       %{py3_dist dpres-signature}
-Requires:       %{py3_dist mets}
-Requires:       %{py3_dist nisomix}
-Requires:       %{py3_dist xml-helpers}
-Requires:       %{py3_dist premis}
-Requires:       %{py3_dist audiomd}
 %description -n python3-dpres-siptools-ng %_description
 
 %prep
