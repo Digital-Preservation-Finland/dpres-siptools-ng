@@ -4,6 +4,8 @@ Changelog
 Unreleased
 ----------
 - Added generating audio metadata (AudioMD) in ``SIPDigitalObject.generate_technical_metadata()``
+- Added RHEL9 compatible RPM spec file
+
 
 All notable changes to this project will be documented in this file.
 
