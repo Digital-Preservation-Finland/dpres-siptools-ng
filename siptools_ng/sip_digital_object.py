@@ -6,6 +6,7 @@ from typing import Iterable, Optional, Union
 
 import mets_builder
 from file_scraper.scraper import Scraper
+from mets_builder.defaults import UNAV
 
 
 class MetadataGenerationError(Exception):
@@ -112,6 +113,63 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         return creation_date.isoformat(timespec="seconds")
 
+    def _create_technical_object_metadata(
+        self,
+        scraper: Scraper,
+        stream: dict
+    ) -> mets_builder.metadata.TechnicalObjectMetadata:
+        """Create technical object metadata object from file-scraper scraper
+        and stream.
+        """
+        return mets_builder.metadata.TechnicalObjectMetadata(
+            file_format=scraper.mimetype,
+            file_format_version=scraper.version,
+            checksum_algorithm="MD5",
+            checksum=scraper.checksum(algorithm="MD5"),
+            file_created_date=self._file_creation_date(self.source_filepath),
+            charset=stream.get("charset", None),
+            original_name=self.source_filepath.name
+        )
+
+    def _create_technical_image_metadata(
+        self,
+        stream: dict
+    ) -> mets_builder.metadata.TechnicalImageMetadata:
+        """Create technical image metadata object from file-scraper stream."""
+        return mets_builder.metadata.TechnicalImageMetadata(
+            compression=stream["compression"],
+            colorspace=stream["colorspace"],
+            width=stream["width"],
+            height=stream["height"],
+            bps_value=stream["bps_value"],
+            bps_unit=stream["bps_unit"],
+            samples_per_pixel=stream["samples_per_pixel"],
+            mimetype=stream.get("mimetype", None),
+            byte_order=stream.get("byte_order", None),
+            icc_profile_name=stream.get("icc_profile_name", None)
+        )
+
+    def _create_technical_audio_metadata(
+        self,
+        stream: dict
+    ) -> mets_builder.metadata.TechnicalAudioMetadata:
+        """Create technical audio metadata from file-scraper stream."""
+        return mets_builder.metadata.TechnicalAudioMetadata(
+            codec_quality=stream["codec_quality"],
+            data_rate_mode=stream["data_rate_mode"],
+            audio_data_encoding=stream.get("audio_data_encoding", UNAV),
+            bits_per_sample=stream.get("bits_per_sample", "0"),
+            codec_creator_app=stream.get("codec_creator_app", UNAV),
+            codec_creator_app_version=stream.get(
+                "codec_creator_app_version", UNAV
+            ),
+            codec_name=stream.get("codec_name", UNAV),
+            data_rate=stream.get("data_rate", "0"),
+            sampling_frequency=stream.get("sampling_frequency", "0"),
+            duration=stream.get("duration", UNAV),
+            num_channels=stream.get("num_channels", UNAV)
+        )
+
     def generate_technical_metadata(self) -> None:
         """Generate technical object metadata for this digital object.
 
@@ -134,24 +192,16 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
 
-        technical_metadata = mets_builder.metadata.TechnicalObjectMetadata(
-            file_format=scraper.mimetype,
-            file_format_version=scraper.version,
-            checksum_algorithm="MD5",
-            checksum=scraper.checksum(algorithm="MD5"),
-            file_created_date=self._file_creation_date(self.source_filepath),
-            charset=stream.get("charset", None),
-            original_name=self.source_filepath.name
-        )
-        self.add_metadata(technical_metadata)
+        metadata = self._create_technical_object_metadata(scraper, stream)
+        self.add_metadata(metadata)
 
         # TODO: Generate specified technical metadata for other stream_types as
         # well than just for images and audio
         if stream["stream_type"] == "image":
-            metadata = mets_builder.metadata.TechnicalImageMetadata(**stream)
+            metadata = self._create_technical_image_metadata(stream)
             self.add_metadata(metadata)
         if stream["stream_type"] == "audio":
-            metadata = mets_builder.metadata.TechnicalAudioMetadata(**stream)
+            metadata = self._create_technical_audio_metadata(stream)
             self.add_metadata(metadata)
 
         self._technical_metadata_generated = True
