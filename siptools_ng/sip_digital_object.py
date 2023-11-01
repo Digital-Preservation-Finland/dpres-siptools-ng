@@ -176,22 +176,24 @@ class SIPDigitalObject(mets_builder.DigitalObject):
     ) -> mets_builder.metadata.TechnicalVideoMetadata:
         """Create technical video metadata from file-scraper stream."""
         return mets_builder.metadata.TechnicalVideoMetadata(
-            duration=stream["duration"],
-            data_rate=stream["data_rate"],
-            bits_per_sample=stream["bits_per_sample"],
+            duration=stream.get("duration", UNAV),
+            data_rate=stream.get("data_rate", "0"),
+            bits_per_sample=stream.get("bits_per_sample", "0"),
             color=stream["color"],
-            codec_creator_app=stream["codec_creator_app"],
-            codec_creator_app_version=stream["codec_creator_app_version"],
-            codec_name=stream["codec_name"],
+            codec_creator_app=stream.get("codec_creator_app", UNAV),
+            codec_creator_app_version=stream.get(
+                "codec_creator_app_version", UNAV
+            ),
+            codec_name=stream.get("codec_name", UNAV),
             codec_quality=stream["codec_quality"],
             data_rate_mode=stream["data_rate_mode"],
-            frame_rate=stream["frame_rate"],
-            pixels_horizontal=stream["width"],
-            pixels_vertical=stream["height"],
-            par=stream["par"],
-            dar=stream["dar"],
-            sampling=stream["sampling"],
-            signal_format=stream["signal_format"],
+            frame_rate=stream.get("frame_rate", "0"),
+            pixels_horizontal=stream.get("width", "0"),
+            pixels_vertical=stream.get("height", "0"),
+            par=stream.get("par", "0"),
+            dar=stream.get("dar", UNAV),
+            sampling=stream.get("sampling", UNAV),
+            signal_format=stream.get("signal_format", UNAV),
             sound=stream["sound"]
         )
 
