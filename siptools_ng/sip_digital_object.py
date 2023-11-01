@@ -170,6 +170,31 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             num_channels=stream.get("num_channels", UNAV)
         )
 
+    def _create_technical_video_metadata(
+        self,
+        stream: dict
+    ) -> mets_builder.metadata.TechnicalVideoMetadata:
+        """Create technical video metadata from file-scraper stream."""
+        return mets_builder.metadata.TechnicalVideoMetadata(
+            duration=stream["duration"],
+            data_rate=stream["data_rate"],
+            bits_per_sample=stream["bits_per_sample"],
+            color=stream["color"],
+            codec_creator_app=stream["codec_creator_app"],
+            codec_creator_app_version=stream["codec_creator_app_version"],
+            codec_name=stream["codec_name"],
+            codec_quality=stream["codec_quality"],
+            data_rate_mode=stream["data_rate_mode"],
+            frame_rate=stream["frame_rate"],
+            pixels_horizontal=stream["width"],
+            pixels_vertical=stream["height"],
+            par=stream["par"],
+            dar=stream["dar"],
+            sampling=stream["sampling"],
+            signal_format=stream["signal_format"],
+            sound=stream["sound"]
+        )
+
     def generate_technical_metadata(self) -> None:
         """Generate technical object metadata for this digital object.
 
@@ -178,8 +203,8 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
         the metadata to this digital object.
 
-        For images also mets_builder.metadata.TechnicalImageMetadata object is
-        created and added to the digital object.
+        For image, audio and video files also corresponding file type specific
+        technical metadata object is created and added to the digital object.
         """
         if self._technical_metadata_generated:
             raise MetadataGenerationError(
@@ -195,13 +220,14 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         metadata = self._create_technical_object_metadata(scraper, stream)
         self.add_metadata(metadata)
 
-        # TODO: Generate specified technical metadata for other stream_types as
-        # well than just for images and audio
         if stream["stream_type"] == "image":
             metadata = self._create_technical_image_metadata(stream)
             self.add_metadata(metadata)
         if stream["stream_type"] == "audio":
             metadata = self._create_technical_audio_metadata(stream)
+            self.add_metadata(metadata)
+        if stream["stream_type"] == "video":
+            metadata = self._create_technical_video_metadata(stream)
             self.add_metadata(metadata)
 
         self._technical_metadata_generated = True

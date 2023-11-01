@@ -4,7 +4,8 @@ from datetime import datetime
 import pytest
 from mets_builder.metadata import (TechnicalAudioMetadata,
                                    TechnicalImageMetadata,
-                                   TechnicalObjectMetadata)
+                                   TechnicalObjectMetadata,
+                                   TechnicalVideoMetadata)
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
                                             SIPDigitalObject)
@@ -187,3 +188,60 @@ def test_generating_technical_metadata_for_audio():
     assert metadata.sampling_frequency == "44.1"
     assert metadata.duration == "PT0.86S"
     assert metadata.num_channels == "2"
+
+
+def test_generating_technical_metadata_for_video():
+    """Test that generating technical metadata for an video file results in
+    correct information.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_video.dv",
+        sip_filepath="sip_data/test_video.dv"
+    )
+
+    digital_object.generate_technical_metadata()
+
+    assert len(digital_object.metadata) == 2
+
+    # Technical object metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalObjectMetadata)
+    ][0]
+    assert metadata.file_format == "video/dv"
+    assert metadata.file_format_version == "(:unap)"
+    assert metadata.charset is None
+    assert metadata.checksum_algorithm.value == "MD5"
+    assert metadata.checksum == "646912efe14a049ceb9f3a6f741d7b66"
+    assert metadata.original_name == "test_video.dv"
+
+    # File creation date cannot be tested with hardcoded time, because it will
+    # differ according to when the user has cloned the repository (and created
+    # the test file while doing so). Settle for testing that file creation date
+    # is in ISO format
+    format_string = "%Y-%m-%dT%H:%M:%S"
+    # Raises error if file_created_date doesn't follow the right format
+    datetime.strptime(metadata.file_created_date, format_string)
+
+    # Technical video metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalVideoMetadata)
+    ][0]
+    assert metadata.duration == "PT0.08S"
+    assert metadata.data_rate == "24.4416"
+    assert metadata.bits_per_sample == "8"
+    assert metadata.color.value == "Color"
+    assert metadata.codec_creator_app == "(:unav)"
+    assert metadata.codec_creator_app_version == "(:unav)"
+    assert metadata.codec_name == "DV"
+    assert metadata.codec_quality.value == "lossy"
+    assert metadata.data_rate_mode.value == "Fixed"
+    assert metadata.frame_rate == "25"
+    assert metadata.pixels_horizontal == "720"
+    assert metadata.pixels_vertical == "576"
+    assert metadata.par == "1.422"
+    assert metadata.dar == "1.778"
+    assert metadata.sampling == "4:2:0"
+    assert metadata.signal_format == "PAL"
+    assert metadata.sound.value == "No"
