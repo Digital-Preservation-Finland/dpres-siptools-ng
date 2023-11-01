@@ -140,7 +140,7 @@ def test_generating_technical_metadata_multiple_times():
 
 
 def test_generating_technical_metadata_for_audio():
-    """Test that generating technical metadata for an audioo file results in
+    """Test that generating technical metadata for an audio file results in
     correct information.
     """
     digital_object = SIPDigitalObject(
