@@ -116,19 +116,55 @@ class SIPDigitalObject(mets_builder.DigitalObject):
     def _create_technical_object_metadata(
         self,
         scraper: Scraper,
-        stream: dict
+        stream: dict,
+        ovr_file_format: Optional[str] = None,
+        ovr_file_format_version: Optional[str] = None,
+        ovr_checksum_algorithm: Union[
+            mets_builder.metadata.ChecksumAlgorithm, str, None
+        ] = None,
+        ovr_checksum: Optional[str] = None,
+        ovr_file_created_date: Optional[str] = None,
+        ovr_object_identifier_type: Optional[str] = None,
+        ovr_object_identifier: Optional[str] = None,
+        ovr_charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        ovr_original_name: Optional[str] = None,
+        format_registry_name: Optional[str] = None,
+        format_registry_key: Optional[str] = None,
+        creating_application: Optional[str] = None,
+        creating_application_version: Optional[str] = None
     ) -> mets_builder.metadata.TechnicalObjectMetadata:
         """Create technical object metadata object from file-scraper scraper
         and stream.
         """
+        def _first(*priority_order):
+            """Return the first given value that is not None.
+
+            If all values are None, return None.
+            """
+            return next(
+                (value for value in priority_order if value is not None),
+                None
+            )
+
         return mets_builder.metadata.TechnicalObjectMetadata(
-            file_format=scraper.mimetype,
-            file_format_version=scraper.version,
-            checksum_algorithm="MD5",
-            checksum=scraper.checksum(algorithm="MD5"),
-            file_created_date=self._file_creation_date(self.source_filepath),
-            charset=stream.get("charset", None),
-            original_name=self.source_filepath.name
+            file_format=_first(ovr_file_format, scraper.mimetype),
+            file_format_version=_first(
+                ovr_file_format_version, scraper.version
+            ),
+            checksum_algorithm=_first(ovr_checksum_algorithm, "MD5"),
+            checksum=_first(ovr_checksum, scraper.checksum(algorithm="MD5")),
+            file_created_date=_first(
+                ovr_file_created_date,
+                self._file_creation_date(self.source_filepath)
+            ),
+            object_identifier_type=ovr_object_identifier_type,
+            object_identifier=ovr_object_identifier,
+            charset=_first(ovr_charset, stream.get("charset", None)),
+            original_name=_first(ovr_original_name, self.source_filepath.name),
+            format_registry_name=format_registry_name,
+            format_registry_key=format_registry_key,
+            creating_application=creating_application,
+            creating_application_version=creating_application_version
         )
 
     def _create_technical_image_metadata(
@@ -197,7 +233,24 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             sound=stream["sound"]
         )
 
-    def generate_technical_metadata(self) -> None:
+    def generate_technical_metadata(
+        self,
+        ovr_file_format: Optional[str] = None,
+        ovr_file_format_version: Optional[str] = None,
+        ovr_checksum_algorithm: Union[
+            mets_builder.metadata.ChecksumAlgorithm, str, None
+        ] = None,
+        ovr_checksum: Optional[str] = None,
+        ovr_file_created_date: Optional[str] = None,
+        ovr_object_identifier_type: Optional[str] = None,
+        ovr_object_identifier: Optional[str] = None,
+        ovr_charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        ovr_original_name: Optional[str] = None,
+        format_registry_name: Optional[str] = None,
+        format_registry_key: Optional[str] = None,
+        creating_application: Optional[str] = None,
+        creating_application_version: Optional[str] = None,
+    ) -> None:
         """Generate technical object metadata for this digital object.
 
         Scrapes the file found in SIPDigitalObject.source_filepath, turning the
@@ -205,8 +258,58 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
         the metadata to this digital object.
 
+        The metadata is overridden or enriched with the user-given values,
+        whenever provided. It is possible, however, to provide no overriding
+        values at all and use only scraped values.
+
         For image, audio and video files also corresponding file type specific
         technical metadata object is created and added to the digital object.
+
+        :param ovr_file_format: Overrides scraped file format of the object.
+            Mimetype of the file, e.g. 'image/tiff'.
+        :param ovr_file_format_version: Overrides scraped file format version
+            of the object. Version number of the file format, e.g. '1.2'.
+        :param ovr_checksum_algorithm: Overrides scraped checksum algorithm of
+            the object. The specific algorithm used to construct the checksum
+            for the digital object. If given as string, the value is cast to
+            mets_builder.metadata.ChecksumAlgorithm and results in error if it
+            is not a valid checksum algorithm. The allowed values can be found
+            from ChecksumAlgorithm documentation.
+        :param ovr_checksum: Overrides scraped checksum of the object. The
+            output of the message digest algorithm.
+        :param ovr_file_created_date: Overrides scraped file created date of
+            the object. The actual or approximate date and time the object was
+            created. The time information must be expressed using either the
+            ISO-8601 format, or its extended version ISO_8601-2.
+        :param ovr_object_identifier_type: Overrides generated object
+            identifier type of the object. Standardized identifier types should
+            be used when possible (e.g., an ISBN for books). When set,
+            ovr_object_identifier has to be set as well.
+        :param ovr_object_identifier: Overrides generated object identifier of
+            the object. File identifiers should be globally unique. When set,
+            ovr_object_identifier_type has to be set as well.
+        :param ovr_charset: Overrides scraped charset of the object. Character
+            encoding of the file. If given as string, the value is cast to
+            mets_builder.metadata.Charset and results in error if it is not a
+            valid charset. The allowed values can be found from Charset
+            documentation.
+        :param ovr_original_name: Overrides scraped original name of the
+            object.
+        :param format_registry_name: Enriches generated metadata with format
+            registry name. Name identifying a format registry, if a format
+            registry is used to give further information about the file format.
+            When set, format_registry_key has to be set as well.
+        :param format_registry_key: Enriches generated metadata with format
+            registry key. The unique key used to reference an entry for this
+            file format in a format registry. When set, format_registry_name
+            has to be set as well.
+        :param creating_application: Enriches generated metadata with creating
+            application. Software that was used to create this file. When set,
+            creating_application_version has to be set as well.
+        :param creating_application_version: Enriches generated metadata with
+            creating application version. Version of the software that was
+            used to create this file. When set, creating_application has to be
+            set as well.
         """
         if self._technical_metadata_generated:
             raise MetadataGenerationError(
@@ -214,12 +317,33 @@ class SIPDigitalObject(mets_builder.DigitalObject):
                 "digital object."
             )
 
-        scraper = Scraper(filename=str(self.source_filepath))
+        scraper = Scraper(
+            filename=str(self.source_filepath),
+            mimetype=ovr_file_format,
+            version=ovr_file_format_version,
+            charset=ovr_charset
+        )
         scraper.scrape(check_wellformed=False)
         # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
 
-        metadata = self._create_technical_object_metadata(scraper, stream)
+        metadata = self._create_technical_object_metadata(
+            scraper,
+            stream,
+            ovr_file_format=ovr_file_format,
+            ovr_file_format_version=ovr_file_format_version,
+            ovr_checksum_algorithm=ovr_checksum_algorithm,
+            ovr_checksum=ovr_checksum,
+            ovr_file_created_date=ovr_file_created_date,
+            ovr_object_identifier_type=ovr_object_identifier_type,
+            ovr_object_identifier=ovr_object_identifier,
+            ovr_charset=ovr_charset,
+            ovr_original_name=ovr_original_name,
+            format_registry_name=format_registry_name,
+            format_registry_key=format_registry_key,
+            creating_application=creating_application,
+            creating_application_version=creating_application_version
+        )
         self.add_metadata(metadata)
 
         if stream["stream_type"] == "image":

@@ -245,3 +245,46 @@ def test_generating_technical_metadata_for_video():
     assert metadata.sampling == "4:2:0"
     assert metadata.signal_format == "PAL"
     assert metadata.sound.value == "No"
+
+
+def test_generate_metadata_with_override_values():
+    """Test that it is possible to override values when generating metadata."""
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_file.txt"
+    )
+
+    digital_object.generate_technical_metadata(
+        ovr_file_format="override_file_format",
+        ovr_file_format_version="override_file_format_version",
+        ovr_checksum_algorithm="SHA-256",
+        ovr_checksum="override_checksum",
+        ovr_file_created_date="override_file_created_date",
+        ovr_object_identifier_type="override_object_identifier_type",
+        ovr_object_identifier="override_object_identifier",
+        ovr_charset="UTF-16",
+        ovr_original_name="override_original_name",
+        format_registry_name="override_format_registry_name",
+        format_registry_key="override_format_registry_key",
+        creating_application="override_creating_application",
+        creating_application_version="override_creating_application_version"
+    )
+
+    assert len(digital_object.metadata) == 1
+    metadata = digital_object.metadata.pop()
+
+    assert metadata.file_format == "override_file_format"
+    assert metadata.file_format_version == "override_file_format_version"
+    assert metadata.checksum_algorithm.value == "SHA-256"
+    assert metadata.checksum == "override_checksum"
+    assert metadata.file_created_date == "override_file_created_date"
+    assert metadata.object_identifier_type == "override_object_identifier_type"
+    assert metadata.object_identifier == "override_object_identifier"
+    assert metadata.charset.value == "UTF-16"
+    assert metadata.original_name == "override_original_name"
+    assert metadata.format_registry_name == "override_format_registry_name"
+    assert metadata.format_registry_key == "override_format_registry_key"
+    assert metadata.creating_application == "override_creating_application"
+    assert metadata.creating_application_version == (
+        "override_creating_application_version"
+    )
