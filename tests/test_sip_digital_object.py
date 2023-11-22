@@ -288,3 +288,36 @@ def test_generate_metadata_with_override_values():
     assert metadata.creating_application_version == (
         "override_creating_application_version"
     )
+
+
+@pytest.mark.parametrize(
+    ("invalid_init_params", "error_message"),
+    (
+        (
+            {"ovr_file_format": "text/csv"},
+            "Overriding file format is given, but file format version is not."
+        ),
+        (
+            {"ovr_file_format_version": "1.0"},
+            "Overriding file format version is given, but file format is not."
+        ),
+        (
+            {"ovr_checksum_algorithm": "SHA-256"},
+            "Overriding checksum algorithm is given, but checksum is not."
+        ),
+        (
+            {"ovr_checksum": "12345"},
+            "Overriding checksum is given, but checksum algorithm is not."
+        )
+    )
+)
+def test_invalid_generate_metadata_params(invalid_init_params, error_message):
+    """Test that invalid arguments when generating metadata raise an error."""
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_file.txt"
+    )
+
+    with pytest.raises(ValueError) as error:
+        digital_object.generate_technical_metadata(**invalid_init_params)
+    assert str(error.value) == error_message

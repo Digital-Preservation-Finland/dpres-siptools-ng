@@ -233,6 +233,33 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             sound=stream["sound"]
         )
 
+    def _generate_metadata_argument_validation(
+        self,
+        ovr_file_format,
+        ovr_file_format_version,
+        ovr_checksum_algorithm,
+        ovr_checksum
+    ):
+        """Validata arguments given to generate_technical_metadata method."""
+        if ovr_file_format and not ovr_file_format_version:
+            raise ValueError(
+                "Overriding file format is given, but file format version is "
+                "not."
+            )
+        if ovr_file_format_version and not ovr_file_format:
+            raise ValueError(
+                "Overriding file format version is given, but file format is "
+                "not."
+            )
+        if ovr_checksum_algorithm and not ovr_checksum:
+            raise ValueError(
+                "Overriding checksum algorithm is given, but checksum is not."
+            )
+        if ovr_checksum and not ovr_checksum_algorithm:
+            raise ValueError(
+                "Overriding checksum is given, but checksum algorithm is not."
+            )
+
     def generate_technical_metadata(
         self,
         ovr_file_format: Optional[str] = None,
@@ -266,17 +293,21 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         technical metadata object is created and added to the digital object.
 
         :param ovr_file_format: Overrides scraped file format of the object.
-            Mimetype of the file, e.g. 'image/tiff'.
+            Mimetype of the file, e.g. 'image/tiff'. When set,
+            ovr_file_format_version has to be set as well.
         :param ovr_file_format_version: Overrides scraped file format version
-            of the object. Version number of the file format, e.g. '1.2'.
+            of the object. Version number of the file format, e.g. '1.2'. When
+            set, ovr_file_format has to be set as well.
         :param ovr_checksum_algorithm: Overrides scraped checksum algorithm of
             the object. The specific algorithm used to construct the checksum
             for the digital object. If given as string, the value is cast to
             mets_builder.metadata.ChecksumAlgorithm and results in error if it
             is not a valid checksum algorithm. The allowed values can be found
-            from ChecksumAlgorithm documentation.
+            from ChecksumAlgorithm documentation. When set, ovr_checksum has to
+            be set as well.
         :param ovr_checksum: Overrides scraped checksum of the object. The
-            output of the message digest algorithm.
+            output of the message digest algorithm. When set,
+            ovr_checksum_algorithm has to be set as well.
         :param ovr_file_created_date: Overrides scraped file created date of
             the object. The actual or approximate date and time the object was
             created. The time information must be expressed using either the
@@ -316,6 +347,13 @@ class SIPDigitalObject(mets_builder.DigitalObject):
                 "Technical metadata has already been generated for the "
                 "digital object."
             )
+
+        self._generate_metadata_argument_validation(
+            ovr_file_format,
+            ovr_file_format_version,
+            ovr_checksum_algorithm,
+            ovr_checksum
+        )
 
         scraper = Scraper(
             filename=str(self.source_filepath),
