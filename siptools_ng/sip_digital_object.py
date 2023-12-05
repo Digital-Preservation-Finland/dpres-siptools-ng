@@ -9,6 +9,129 @@ from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
 
 
+def _generate_metadata_argument_validation(
+    ovr_file_format,
+    ovr_file_format_version,
+    ovr_checksum_algorithm,
+    ovr_checksum
+):
+    """Validata arguments given to generate_technical_metadata method."""
+    if ovr_file_format and not ovr_file_format_version:
+        raise ValueError(
+            "Overriding file format is given, but file format version is "
+            "not."
+        )
+    if ovr_file_format_version and not ovr_file_format:
+        raise ValueError(
+            "Overriding file format version is given, but file format is "
+            "not."
+        )
+    if ovr_checksum_algorithm and not ovr_checksum:
+        raise ValueError(
+            "Overriding checksum algorithm is given, but checksum is not."
+        )
+    if ovr_checksum and not ovr_checksum_algorithm:
+        raise ValueError(
+            "Overriding checksum is given, but checksum algorithm is not."
+        )
+
+
+def _file_creation_date(filepath: Path) -> str:
+    """Return creation date for file.
+
+    Try to get the date that a file was created, falling back to when it
+    was last modified if that isn't possible. See
+    http://stackoverflow.com/a/39501288/1709587 for explanation.
+
+    :param filepath: Path to the file.
+
+    :returns: Timestamp for the creation date of the file, or for the last
+        modification date if the creation date is not found.
+    """
+    stat = filepath.stat()
+
+    if platform.system() == "Windows":
+        creation_date = datetime.fromtimestamp(stat.st_ctime)
+    else:
+        try:
+            # Some Unix systems such as macOS might have birthtime defined
+            creation_date = datetime.fromtimestamp(
+                stat.st_birthtime  # type:ignore
+            )
+        except AttributeError:
+            # We're probably on Linux. No easy way to get creation dates
+            # here, so we'll settle for when its content was last modified.
+            creation_date = datetime.fromtimestamp(stat.st_mtime)
+
+    return creation_date.isoformat(timespec="seconds")
+
+
+def _create_technical_image_metadata(
+    stream: dict
+) -> mets_builder.metadata.TechnicalImageMetadata:
+    """Create technical image metadata object from file-scraper stream."""
+    return mets_builder.metadata.TechnicalImageMetadata(
+        compression=stream["compression"],
+        colorspace=stream["colorspace"],
+        width=stream["width"],
+        height=stream["height"],
+        bps_value=stream["bps_value"],
+        bps_unit=stream["bps_unit"],
+        samples_per_pixel=stream["samples_per_pixel"],
+        mimetype=stream.get("mimetype", None),
+        byte_order=stream.get("byte_order", None),
+        icc_profile_name=stream.get("icc_profile_name", None)
+    )
+
+
+def _create_technical_audio_metadata(
+    stream: dict
+) -> mets_builder.metadata.TechnicalAudioMetadata:
+    """Create technical audio metadata from file-scraper stream."""
+    return mets_builder.metadata.TechnicalAudioMetadata(
+        codec_quality=stream["codec_quality"],
+        data_rate_mode=stream["data_rate_mode"],
+        audio_data_encoding=stream.get("audio_data_encoding", UNAV),
+        bits_per_sample=stream.get("bits_per_sample", "0"),
+        codec_creator_app=stream.get("codec_creator_app", UNAV),
+        codec_creator_app_version=stream.get(
+            "codec_creator_app_version", UNAV
+        ),
+        codec_name=stream.get("codec_name", UNAV),
+        data_rate=stream.get("data_rate", "0"),
+        sampling_frequency=stream.get("sampling_frequency", "0"),
+        duration=stream.get("duration", UNAV),
+        num_channels=stream.get("num_channels", UNAV)
+    )
+
+
+def _create_technical_video_metadata(
+    stream: dict
+) -> mets_builder.metadata.TechnicalVideoMetadata:
+    """Create technical video metadata from file-scraper stream."""
+    return mets_builder.metadata.TechnicalVideoMetadata(
+        duration=stream.get("duration", UNAV),
+        data_rate=stream.get("data_rate", "0"),
+        bits_per_sample=stream.get("bits_per_sample", "0"),
+        color=stream["color"],
+        codec_creator_app=stream.get("codec_creator_app", UNAV),
+        codec_creator_app_version=stream.get(
+            "codec_creator_app_version", UNAV
+        ),
+        codec_name=stream.get("codec_name", UNAV),
+        codec_quality=stream["codec_quality"],
+        data_rate_mode=stream["data_rate_mode"],
+        frame_rate=stream.get("frame_rate", "0"),
+        pixels_horizontal=stream.get("width", "0"),
+        pixels_vertical=stream.get("height", "0"),
+        par=stream.get("par", "0"),
+        dar=stream.get("dar", UNAV),
+        sampling=stream.get("sampling", UNAV),
+        signal_format=stream.get("signal_format", UNAV),
+        sound=stream["sound"]
+    )
+
+
 class MetadataGenerationError(Exception):
     """Error raised when there is an error in metadata generation."""
 
@@ -84,35 +207,6 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         self._source_filepath = source_filepath
 
-    def _file_creation_date(self, filepath: Path) -> str:
-        """Return creation date for file.
-
-        Try to get the date that a file was created, falling back to when it
-        was last modified if that isn't possible. See
-        http://stackoverflow.com/a/39501288/1709587 for explanation.
-
-        :param filepath: Path to the file.
-
-        :returns: Timestamp for the creation date of the file, or for the last
-            modification date if the creation date is not found.
-        """
-        stat = filepath.stat()
-
-        if platform.system() == "Windows":
-            creation_date = datetime.fromtimestamp(stat.st_ctime)
-        else:
-            try:
-                # Some Unix systems such as macOS might have birthtime defined
-                creation_date = datetime.fromtimestamp(
-                    stat.st_birthtime  # type:ignore
-                )
-            except AttributeError:
-                # We're probably on Linux. No easy way to get creation dates
-                # here, so we'll settle for when its content was last modified.
-                creation_date = datetime.fromtimestamp(stat.st_mtime)
-
-        return creation_date.isoformat(timespec="seconds")
-
     def _create_technical_object_metadata(
         self,
         scraper: Scraper,
@@ -155,7 +249,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             checksum=_first(ovr_checksum, scraper.checksum(algorithm="MD5")),
             file_created_date=_first(
                 ovr_file_created_date,
-                self._file_creation_date(self.source_filepath)
+                _file_creation_date(self.source_filepath)
             ),
             object_identifier_type=ovr_object_identifier_type,
             object_identifier=ovr_object_identifier,
@@ -166,99 +260,6 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-
-    def _create_technical_image_metadata(
-        self,
-        stream: dict
-    ) -> mets_builder.metadata.TechnicalImageMetadata:
-        """Create technical image metadata object from file-scraper stream."""
-        return mets_builder.metadata.TechnicalImageMetadata(
-            compression=stream["compression"],
-            colorspace=stream["colorspace"],
-            width=stream["width"],
-            height=stream["height"],
-            bps_value=stream["bps_value"],
-            bps_unit=stream["bps_unit"],
-            samples_per_pixel=stream["samples_per_pixel"],
-            mimetype=stream.get("mimetype", None),
-            byte_order=stream.get("byte_order", None),
-            icc_profile_name=stream.get("icc_profile_name", None)
-        )
-
-    def _create_technical_audio_metadata(
-        self,
-        stream: dict
-    ) -> mets_builder.metadata.TechnicalAudioMetadata:
-        """Create technical audio metadata from file-scraper stream."""
-        return mets_builder.metadata.TechnicalAudioMetadata(
-            codec_quality=stream["codec_quality"],
-            data_rate_mode=stream["data_rate_mode"],
-            audio_data_encoding=stream.get("audio_data_encoding", UNAV),
-            bits_per_sample=stream.get("bits_per_sample", "0"),
-            codec_creator_app=stream.get("codec_creator_app", UNAV),
-            codec_creator_app_version=stream.get(
-                "codec_creator_app_version", UNAV
-            ),
-            codec_name=stream.get("codec_name", UNAV),
-            data_rate=stream.get("data_rate", "0"),
-            sampling_frequency=stream.get("sampling_frequency", "0"),
-            duration=stream.get("duration", UNAV),
-            num_channels=stream.get("num_channels", UNAV)
-        )
-
-    def _create_technical_video_metadata(
-        self,
-        stream: dict
-    ) -> mets_builder.metadata.TechnicalVideoMetadata:
-        """Create technical video metadata from file-scraper stream."""
-        return mets_builder.metadata.TechnicalVideoMetadata(
-            duration=stream.get("duration", UNAV),
-            data_rate=stream.get("data_rate", "0"),
-            bits_per_sample=stream.get("bits_per_sample", "0"),
-            color=stream["color"],
-            codec_creator_app=stream.get("codec_creator_app", UNAV),
-            codec_creator_app_version=stream.get(
-                "codec_creator_app_version", UNAV
-            ),
-            codec_name=stream.get("codec_name", UNAV),
-            codec_quality=stream["codec_quality"],
-            data_rate_mode=stream["data_rate_mode"],
-            frame_rate=stream.get("frame_rate", "0"),
-            pixels_horizontal=stream.get("width", "0"),
-            pixels_vertical=stream.get("height", "0"),
-            par=stream.get("par", "0"),
-            dar=stream.get("dar", UNAV),
-            sampling=stream.get("sampling", UNAV),
-            signal_format=stream.get("signal_format", UNAV),
-            sound=stream["sound"]
-        )
-
-    def _generate_metadata_argument_validation(
-        self,
-        ovr_file_format,
-        ovr_file_format_version,
-        ovr_checksum_algorithm,
-        ovr_checksum
-    ):
-        """Validata arguments given to generate_technical_metadata method."""
-        if ovr_file_format and not ovr_file_format_version:
-            raise ValueError(
-                "Overriding file format is given, but file format version is "
-                "not."
-            )
-        if ovr_file_format_version and not ovr_file_format:
-            raise ValueError(
-                "Overriding file format version is given, but file format is "
-                "not."
-            )
-        if ovr_checksum_algorithm and not ovr_checksum:
-            raise ValueError(
-                "Overriding checksum algorithm is given, but checksum is not."
-            )
-        if ovr_checksum and not ovr_checksum_algorithm:
-            raise ValueError(
-                "Overriding checksum is given, but checksum algorithm is not."
-            )
 
     def generate_technical_metadata(
         self,
@@ -348,7 +349,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
                 "digital object."
             )
 
-        self._generate_metadata_argument_validation(
+        _generate_metadata_argument_validation(
             ovr_file_format,
             ovr_file_format_version,
             ovr_checksum_algorithm,
@@ -385,13 +386,13 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         self.add_metadata(metadata)
 
         if stream["stream_type"] == "image":
-            metadata = self._create_technical_image_metadata(stream)
+            metadata = _create_technical_image_metadata(stream)
             self.add_metadata(metadata)
         if stream["stream_type"] == "audio":
-            metadata = self._create_technical_audio_metadata(stream)
+            metadata = _create_technical_audio_metadata(stream)
             self.add_metadata(metadata)
         if stream["stream_type"] == "video":
-            metadata = self._create_technical_video_metadata(stream)
+            metadata = _create_technical_video_metadata(stream)
             self.add_metadata(metadata)
 
         self._technical_metadata_generated = True
