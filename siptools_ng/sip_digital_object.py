@@ -170,7 +170,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             a div in a structural map.
         :param streams: Iterable of DigitalObjectStreams, representing the
             streams of this digital object.
-        :param str identifier: Identifier for the digital object. The
+        :param identifier: Identifier for the digital object. The
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
         """
@@ -279,7 +279,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         creating_application: Optional[str] = None,
         creating_application_version: Optional[str] = None,
     ) -> None:
-        """Generate technical object metadata for this digital object.
+        """Generate technical metadata for this digital object.
 
         Scrapes the file found in SIPDigitalObject.source_filepath, turning the
         scraped information into a
