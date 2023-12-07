@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 from mets_builder.metadata import (TechnicalAudioMetadata,
+                                   TechnicalCSVMetadata,
                                    TechnicalImageMetadata,
                                    TechnicalObjectMetadata,
                                    TechnicalVideoMetadata)
@@ -321,3 +322,103 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
     with pytest.raises(ValueError) as error:
         digital_object.generate_technical_metadata(**invalid_init_params)
     assert str(error.value) == error_message
+
+
+@pytest.mark.parametrize(
+    ("args", "correct_values"),
+    (
+        # Detects header when header row is declared to exist
+        (
+            {"has_header": True},
+            {
+                "header": ["year", "brand", "model", "detail", "other"],
+                "charset": "UTF-8",
+                "delimiter": ",",
+                "record_separator": "\r\n",
+                "quoting_character": '"'
+            }
+        ),
+        # Generates header when header row is declared not to exist
+        (
+            {"has_header": False},
+            {
+                "header": [
+                    "header1", "header2", "header3", "header4", "header5"
+                ],
+                "charset": "UTF-8",
+                "delimiter": ",",
+                "record_separator": "\r\n",
+                "quoting_character": '"'
+            }
+        ),
+        # Uses overriding values
+        (
+            {
+                "has_header": True,
+                "ovr_charset": "ISO-8859-15",
+                "ovr_delimiter": ";",
+                "ovr_record_separator": "CR+LF",
+                "ovr_quoting_character": "'"
+            },
+            {
+                "header": ["year", "brand", "model", "detail", "other"],
+                "charset": "ISO-8859-15",
+                "delimiter": ";",
+                "record_separator": "CR+LF",
+                "quoting_character": "'"
+            }
+        )
+    )
+)
+def test_generating_technical_metadata_for_csv_file(
+    args, correct_values
+):
+    """Test that generating technical metadata for a CSV file results in
+    correct information.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_csv.csv",
+        sip_filepath="sip_data/test_csv.csv"
+    )
+
+    digital_object.generate_technical_csv_metadata(
+        has_header=args.get("has_header"),
+        ovr_charset=args.get("ovr_charset"),
+        ovr_delimiter=args.get("ovr_delimiter"),
+        ovr_record_separator=args.get("ovr_record_separator"),
+        ovr_quoting_character=args.get("ovr_quoting_character")
+    )
+
+    assert len(digital_object.metadata) == 2
+
+    # Technical object metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalObjectMetadata)
+    ][0]
+    assert metadata.file_format == "text/csv"
+    assert metadata.file_format_version == "(:unap)"
+    assert metadata.charset.value == correct_values["charset"]
+    assert metadata.checksum_algorithm.value == "MD5"
+    assert metadata.checksum == "bca595dbb4536d957f2dbabf83ceecae"
+    assert metadata.original_name == "test_csv.csv"
+
+    # File creation date cannot be tested with hardcoded time, because it will
+    # differ according to when the user has cloned the repository (and created
+    # the test file while doing so). Settle for testing that file creation date
+    # is in ISO format
+    format_string = "%Y-%m-%dT%H:%M:%S"
+    # Raises error if file_created_date doesn't follow the right format
+    datetime.strptime(metadata.file_created_date, format_string)
+
+    # Technical CSV metadata
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalCSVMetadata)
+    ][0]
+    assert metadata.filenames == ["sip_data/test_csv.csv"]
+    assert metadata.header == correct_values["header"]
+    assert metadata.charset == correct_values["charset"]
+    assert metadata.delimiter == correct_values["delimiter"]
+    assert metadata.record_separator == correct_values["record_separator"]
+    assert metadata.quoting_character == correct_values["quoting_character"]

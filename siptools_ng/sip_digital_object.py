@@ -9,6 +9,17 @@ from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
 
 
+def _first(*priority_order):
+    """Return the first given value that is not None.
+
+    If all values are None, return None.
+    """
+    return next(
+        (value for value in priority_order if value is not None),
+        None
+    )
+
+
 def _generate_metadata_argument_validation(
     ovr_file_format,
     ovr_file_format_version,
@@ -207,6 +218,19 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         self._source_filepath = source_filepath
 
+    def _scrape_file(
+        self, mimetype=None, version=None, charset=None
+    ) -> Scraper:
+        """Scrape file using file-scraper."""
+        scraper = Scraper(
+            filename=str(self.source_filepath),
+            mimetype=mimetype,
+            version=version,
+            charset=charset
+        )
+        scraper.scrape(check_wellformed=False)
+        return scraper
+
     def _create_technical_object_metadata(
         self,
         scraper: Scraper,
@@ -230,16 +254,6 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """Create technical object metadata object from file-scraper scraper
         and stream.
         """
-        def _first(*priority_order):
-            """Return the first given value that is not None.
-
-            If all values are None, return None.
-            """
-            return next(
-                (value for value in priority_order if value is not None),
-                None
-            )
-
         return mets_builder.metadata.TechnicalObjectMetadata(
             file_format=_first(ovr_file_format, scraper.mimetype),
             file_format_version=_first(
@@ -280,6 +294,11 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         creating_application_version: Optional[str] = None,
     ) -> None:
         """Generate technical metadata for this digital object.
+
+        CSV files are impossible to differentiate from other text files
+        with certainty using only programmatic methods. For this reason the
+        specialized method generate_technical_csv_metadata should be used
+        instead of this one when generating technical metadata for CSV files.
 
         Scrapes the file found in SIPDigitalObject.source_filepath, turning the
         scraped information into a
@@ -356,13 +375,11 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             ovr_checksum
         )
 
-        scraper = Scraper(
-            filename=str(self.source_filepath),
+        scraper = self._scrape_file(
             mimetype=ovr_file_format,
             version=ovr_file_format_version,
             charset=ovr_charset
         )
-        scraper.scrape(check_wellformed=False)
         # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
 
@@ -396,3 +413,86 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             self.add_metadata(metadata)
 
         self._technical_metadata_generated = True
+
+    def generate_technical_csv_metadata(
+        self,
+        has_header: bool,
+        ovr_delimiter: Optional[str] = None,
+        ovr_record_separator: Optional[str] = None,
+        ovr_quoting_character: Optional[str] = None,
+        **kwargs
+    ) -> None:
+        """Generate technical metadata for this digital object.
+
+        Using this method makes sense only for CSV files. For other types of
+        files, the more generic generate_technical_metadata method should be
+        used.
+
+        This method calls generate_technical_metadata method under the hood for
+        creating the more generic technical object metadata. Any keyword
+        arguments that can be given to generate_technical_metadata can also be
+        given here, except for ovr_file_format and ovr_file_format_version,
+        which are set automatically to "text/csv" and "(:unap)". See
+        generate_technical_metadata documentation for description what the
+        method does, as well as the available parameters and their
+        descriptions.
+
+        In addition, this method creates CSV specific technical metadata object
+        mets_builder.metadata.TechnicalCSVMetadata, and adds it to this
+        digital object. The generated metadata is overridden with the
+        user-given values, whenever provided. It is possible, however, to
+        provide no overriding values at all and use only scraped values.
+
+        :param has_header: A boolean indicating whether this CSV file has a
+            header row or not. If set as True, the first row of the file is
+            used as header information. If set as False, the header metadata is
+            set as "header1", "header2", etc. according to the number of fields
+            in a row.
+        :param ovr_delimiter: Overrides the scraped delimiter character(s). The
+            character or combination of characters that are used to separate
+            fields in the CSV file.
+        :param ovr_record_separator: Overrides the scraped record separator
+            character(s). The character or combination of characters that are
+            used to separate records in the CSV file.
+        :param ovr_quoting_character: Overrides the scraped quoting character.
+            The character that is used to encapsulate values in the CSV file.
+            Encapsulated values can include characters that are otherwise
+            treated in a special way, such as the delimiter character.
+        """
+        # Generate PREMIS:OBJECT metadata with the generic method
+        self.generate_technical_metadata(
+            ovr_file_format="text/csv",
+            ovr_file_format_version="(:unap)",
+            **kwargs
+        )
+
+        # Generate technical CSV metadata (ADDML)
+        scraper = self._scrape_file(
+            mimetype="text/csv",
+            version="(:unap)",
+            charset=kwargs.get("ovr_charset")
+        )
+
+        # For CSV files, a single stream can be assumed
+        stream = scraper.streams[0]
+
+        # Generate header information
+        first_line = stream["first_line"]
+        if has_header:
+            header = first_line
+        else:
+            header = [f"header{n}" for n in range(1, len(first_line) + 1)]
+
+        # Create metadata
+        metadata = mets_builder.metadata.TechnicalCSVMetadata(
+            filenames=[self.sip_filepath],
+            header=header,
+            charset=_first(kwargs.get("ovr_charset"), stream["charset"]),
+            delimiter=_first(ovr_delimiter, stream["delimiter"]),
+            record_separator=_first(ovr_record_separator, stream["separator"]),
+            quoting_character=_first(
+                ovr_quoting_character, stream["quotechar"]
+            )
+        )
+
+        self.add_metadata(metadata)
