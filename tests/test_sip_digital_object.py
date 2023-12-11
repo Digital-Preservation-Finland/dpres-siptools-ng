@@ -248,46 +248,49 @@ def test_generating_technical_metadata_for_video():
     assert metadata.sound.value == "No"
 
 
-def test_generate_metadata_with_override_values():
-    """Test that it is possible to override values when generating metadata."""
+def test_generate_metadata_with_predefined_values():
+    """Test that it is possible to predefine values when generating metadata.
+    """
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
 
     digital_object.generate_technical_metadata(
-        ovr_file_format="override_file_format",
-        ovr_file_format_version="override_file_format_version",
-        ovr_checksum_algorithm="SHA-256",
-        ovr_checksum="override_checksum",
-        ovr_file_created_date="override_file_created_date",
-        ovr_object_identifier_type="override_object_identifier_type",
-        ovr_object_identifier="override_object_identifier",
-        ovr_charset="UTF-16",
-        ovr_original_name="override_original_name",
-        format_registry_name="override_format_registry_name",
-        format_registry_key="override_format_registry_key",
-        creating_application="override_creating_application",
-        creating_application_version="override_creating_application_version"
+        predef_file_format="predefined_file_format",
+        predef_file_format_version="predefined_file_format_version",
+        predef_checksum_algorithm="SHA-256",
+        predef_checksum="predefined_checksum",
+        predef_file_created_date="predefined_file_created_date",
+        predef_object_identifier_type="predefined_object_identifier_type",
+        predef_object_identifier="predefined_object_identifier",
+        predef_charset="UTF-16",
+        predef_original_name="predefined_original_name",
+        format_registry_name="predefined_format_registry_name",
+        format_registry_key="predefined_format_registry_key",
+        creating_application="predefined_creating_application",
+        creating_application_version="predefined_creating_application_version"
     )
 
     assert len(digital_object.metadata) == 1
     metadata = digital_object.metadata.pop()
 
-    assert metadata.file_format == "override_file_format"
-    assert metadata.file_format_version == "override_file_format_version"
+    assert metadata.file_format == "predefined_file_format"
+    assert metadata.file_format_version == "predefined_file_format_version"
     assert metadata.checksum_algorithm.value == "SHA-256"
-    assert metadata.checksum == "override_checksum"
-    assert metadata.file_created_date == "override_file_created_date"
-    assert metadata.object_identifier_type == "override_object_identifier_type"
-    assert metadata.object_identifier == "override_object_identifier"
+    assert metadata.checksum == "predefined_checksum"
+    assert metadata.file_created_date == "predefined_file_created_date"
+    assert metadata.object_identifier_type == (
+        "predefined_object_identifier_type"
+    )
+    assert metadata.object_identifier == "predefined_object_identifier"
     assert metadata.charset.value == "UTF-16"
-    assert metadata.original_name == "override_original_name"
-    assert metadata.format_registry_name == "override_format_registry_name"
-    assert metadata.format_registry_key == "override_format_registry_key"
-    assert metadata.creating_application == "override_creating_application"
+    assert metadata.original_name == "predefined_original_name"
+    assert metadata.format_registry_name == "predefined_format_registry_name"
+    assert metadata.format_registry_key == "predefined_format_registry_key"
+    assert metadata.creating_application == "predefined_creating_application"
     assert metadata.creating_application_version == (
-        "override_creating_application_version"
+        "predefined_creating_application_version"
     )
 
 
@@ -295,20 +298,20 @@ def test_generate_metadata_with_override_values():
     ("invalid_init_params", "error_message"),
     (
         (
-            {"ovr_file_format": "text/csv"},
-            "Overriding file format is given, but file format version is not."
+            {"predef_file_format": "text/csv"},
+            "Predefined file format is given, but file format version is not."
         ),
         (
-            {"ovr_file_format_version": "1.0"},
-            "Overriding file format version is given, but file format is not."
+            {"predef_file_format_version": "1.0"},
+            "Predefined file format version is given, but file format is not."
         ),
         (
-            {"ovr_checksum_algorithm": "SHA-256"},
-            "Overriding checksum algorithm is given, but checksum is not."
+            {"predef_checksum_algorithm": "SHA-256"},
+            "Predefined checksum algorithm is given, but checksum is not."
         ),
         (
-            {"ovr_checksum": "12345"},
-            "Overriding checksum is given, but checksum algorithm is not."
+            {"predef_checksum": "12345"},
+            "Predefined checksum is given, but checksum algorithm is not."
         )
     )
 )
@@ -351,14 +354,14 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
                 "quoting_character": '"'
             }
         ),
-        # Uses overriding values
+        # Uses predefined values to override scraped values
         (
             {
                 "has_header": True,
-                "ovr_charset": "ISO-8859-15",
-                "ovr_delimiter": ";",
-                "ovr_record_separator": "CR+LF",
-                "ovr_quoting_character": "'"
+                "predef_charset": "ISO-8859-15",
+                "predef_delimiter": ";",
+                "predef_record_separator": "CR+LF",
+                "predef_quoting_character": "'"
             },
             {
                 "header": ["year", "brand", "model", "detail", "other"],
@@ -383,10 +386,10 @@ def test_generating_technical_metadata_for_csv_file(
 
     digital_object.generate_technical_csv_metadata(
         has_header=args.get("has_header"),
-        ovr_charset=args.get("ovr_charset"),
-        ovr_delimiter=args.get("ovr_delimiter"),
-        ovr_record_separator=args.get("ovr_record_separator"),
-        ovr_quoting_character=args.get("ovr_quoting_character")
+        predef_charset=args.get("predef_charset"),
+        predef_delimiter=args.get("predef_delimiter"),
+        predef_record_separator=args.get("predef_record_separator"),
+        predef_quoting_character=args.get("predef_quoting_character")
     )
 
     assert len(digital_object.metadata) == 2

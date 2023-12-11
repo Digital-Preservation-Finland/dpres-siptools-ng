@@ -21,29 +21,29 @@ def _first(*priority_order):
 
 
 def _generate_metadata_argument_validation(
-    ovr_file_format,
-    ovr_file_format_version,
-    ovr_checksum_algorithm,
-    ovr_checksum
+    predef_file_format,
+    predef_file_format_version,
+    predef_checksum_algorithm,
+    predef_checksum
 ):
     """Validata arguments given to generate_technical_metadata method."""
-    if ovr_file_format and not ovr_file_format_version:
+    if predef_file_format and not predef_file_format_version:
         raise ValueError(
-            "Overriding file format is given, but file format version is "
+            "Predefined file format is given, but file format version is "
             "not."
         )
-    if ovr_file_format_version and not ovr_file_format:
+    if predef_file_format_version and not predef_file_format:
         raise ValueError(
-            "Overriding file format version is given, but file format is "
+            "Predefined file format version is given, but file format is "
             "not."
         )
-    if ovr_checksum_algorithm and not ovr_checksum:
+    if predef_checksum_algorithm and not predef_checksum:
         raise ValueError(
-            "Overriding checksum algorithm is given, but checksum is not."
+            "Predefined checksum algorithm is given, but checksum is not."
         )
-    if ovr_checksum and not ovr_checksum_algorithm:
+    if predef_checksum and not predef_checksum_algorithm:
         raise ValueError(
-            "Overriding checksum is given, but checksum algorithm is not."
+            "Predefined checksum is given, but checksum algorithm is not."
         )
 
 
@@ -235,17 +235,17 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         self,
         scraper: Scraper,
         stream: dict,
-        ovr_file_format: Optional[str] = None,
-        ovr_file_format_version: Optional[str] = None,
-        ovr_checksum_algorithm: Union[
+        predef_file_format: Optional[str] = None,
+        predef_file_format_version: Optional[str] = None,
+        predef_checksum_algorithm: Union[
             mets_builder.metadata.ChecksumAlgorithm, str, None
         ] = None,
-        ovr_checksum: Optional[str] = None,
-        ovr_file_created_date: Optional[str] = None,
-        ovr_object_identifier_type: Optional[str] = None,
-        ovr_object_identifier: Optional[str] = None,
-        ovr_charset: Union[mets_builder.metadata.Charset, str, None] = None,
-        ovr_original_name: Optional[str] = None,
+        predef_checksum: Optional[str] = None,
+        predef_file_created_date: Optional[str] = None,
+        predef_object_identifier_type: Optional[str] = None,
+        predef_object_identifier: Optional[str] = None,
+        predef_charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        predef_original_name: Optional[str] = None,
         format_registry_name: Optional[str] = None,
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
@@ -255,20 +255,24 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         and stream.
         """
         return mets_builder.metadata.TechnicalObjectMetadata(
-            file_format=_first(ovr_file_format, scraper.mimetype),
+            file_format=_first(predef_file_format, scraper.mimetype),
             file_format_version=_first(
-                ovr_file_format_version, scraper.version
+                predef_file_format_version, scraper.version
             ),
-            checksum_algorithm=_first(ovr_checksum_algorithm, "MD5"),
-            checksum=_first(ovr_checksum, scraper.checksum(algorithm="MD5")),
+            checksum_algorithm=_first(predef_checksum_algorithm, "MD5"),
+            checksum=_first(
+                predef_checksum, scraper.checksum(algorithm="MD5")
+            ),
             file_created_date=_first(
-                ovr_file_created_date,
+                predef_file_created_date,
                 _file_creation_date(self.source_filepath)
             ),
-            object_identifier_type=ovr_object_identifier_type,
-            object_identifier=ovr_object_identifier,
-            charset=_first(ovr_charset, stream.get("charset", None)),
-            original_name=_first(ovr_original_name, self.source_filepath.name),
+            object_identifier_type=predef_object_identifier_type,
+            object_identifier=predef_object_identifier,
+            charset=_first(predef_charset, stream.get("charset", None)),
+            original_name=_first(
+                predef_original_name, self.source_filepath.name
+            ),
             format_registry_name=format_registry_name,
             format_registry_key=format_registry_key,
             creating_application=creating_application,
@@ -277,17 +281,17 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
     def generate_technical_metadata(
         self,
-        ovr_file_format: Optional[str] = None,
-        ovr_file_format_version: Optional[str] = None,
-        ovr_checksum_algorithm: Union[
+        predef_file_format: Optional[str] = None,
+        predef_file_format_version: Optional[str] = None,
+        predef_checksum_algorithm: Union[
             mets_builder.metadata.ChecksumAlgorithm, str, None
         ] = None,
-        ovr_checksum: Optional[str] = None,
-        ovr_file_created_date: Optional[str] = None,
-        ovr_object_identifier_type: Optional[str] = None,
-        ovr_object_identifier: Optional[str] = None,
-        ovr_charset: Union[mets_builder.metadata.Charset, str, None] = None,
-        ovr_original_name: Optional[str] = None,
+        predef_checksum: Optional[str] = None,
+        predef_file_created_date: Optional[str] = None,
+        predef_object_identifier_type: Optional[str] = None,
+        predef_object_identifier: Optional[str] = None,
+        predef_charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        predef_original_name: Optional[str] = None,
         format_registry_name: Optional[str] = None,
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
@@ -305,47 +309,51 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
         the metadata to this digital object.
 
-        The metadata is overridden or enriched with the user-given values,
-        whenever provided. It is possible, however, to provide no overriding
-        values at all and use only scraped values.
+        The metadata is overridden or enriched with the user-given predefined
+        values, whenever provided. It is possible, however, to provide no
+        predefined values at all and use only scraped values.
 
         For image, audio and video files also corresponding file type specific
         technical metadata object is created and added to the digital object.
 
-        :param ovr_file_format: Overrides scraped file format of the object.
-            Mimetype of the file, e.g. 'image/tiff'. When set,
-            ovr_file_format_version has to be set as well.
-        :param ovr_file_format_version: Overrides scraped file format version
-            of the object. Version number of the file format, e.g. '1.2'. When
-            set, ovr_file_format has to be set as well.
-        :param ovr_checksum_algorithm: Overrides scraped checksum algorithm of
-            the object. The specific algorithm used to construct the checksum
-            for the digital object. If given as string, the value is cast to
+        :param predef_file_format: Overrides scraped file format of the object
+            with a predefined value. Mimetype of the file, e.g. 'image/tiff'.
+            When set, predef_file_format_version has to be set as well.
+        :param predef_file_format_version: Overrides scraped file format
+            version of the object with a predefined value. Version number of
+            the file format, e.g. '1.2'. When set, predef_file_format has to be
+            set as well.
+        :param predef_checksum_algorithm: Overrides scraped checksum algorithm
+            of the object with a predefined value. The specific algorithm used
+            to construct the checksum for the digital object. If given as
+            string, the value is cast to
             mets_builder.metadata.ChecksumAlgorithm and results in error if it
             is not a valid checksum algorithm. The allowed values can be found
-            from ChecksumAlgorithm documentation. When set, ovr_checksum has to
-            be set as well.
-        :param ovr_checksum: Overrides scraped checksum of the object. The
-            output of the message digest algorithm. When set,
-            ovr_checksum_algorithm has to be set as well.
-        :param ovr_file_created_date: Overrides scraped file created date of
-            the object. The actual or approximate date and time the object was
-            created. The time information must be expressed using either the
-            ISO-8601 format, or its extended version ISO_8601-2.
-        :param ovr_object_identifier_type: Overrides generated object
-            identifier type of the object. Standardized identifier types should
-            be used when possible (e.g., an ISBN for books). When set,
-            ovr_object_identifier has to be set as well.
-        :param ovr_object_identifier: Overrides generated object identifier of
-            the object. File identifiers should be globally unique. When set,
-            ovr_object_identifier_type has to be set as well.
-        :param ovr_charset: Overrides scraped charset of the object. Character
-            encoding of the file. If given as string, the value is cast to
-            mets_builder.metadata.Charset and results in error if it is not a
-            valid charset. The allowed values can be found from Charset
-            documentation.
-        :param ovr_original_name: Overrides scraped original name of the
-            object.
+            from ChecksumAlgorithm documentation. When set, predef_checksum has
+            to be set as well.
+        :param predef_checksum: Overrides scraped checksum of the object with a
+            predefined value. The output of the message digest algorithm. When
+            set, predef_checksum_algorithm has to be set as well.
+        :param predef_file_created_date: Overrides scraped file created date of
+            the object with a predefined value. The actual or approximate date
+            and time the object was created. The time information must be
+            expressed using either the ISO-8601 format, or its extended version
+            ISO_8601-2.
+        :param predef_object_identifier_type: Overrides generated object
+            identifier type of the object with a predefined value. Standardized
+            identifier types should be used when possible (e.g., an ISBN for
+            books). When set, predef_object_identifier has to be set as well.
+        :param predef_object_identifier: Overrides generated object identifier
+            of the object with a predefined value. File identifiers should be
+            globally unique. When set, predef_object_identifier_type has to be
+            set as well.
+        :param predef_charset: Overrides scraped charset of the object with a
+            predefined value. Character encoding of the file. If given as
+            string, the value is cast to mets_builder.metadata.Charset and
+            results in error if it is not a valid charset. The allowed values
+            can be found from Charset documentation.
+        :param predef_original_name: Overrides scraped original name of the
+            object with a predefined value.
         :param format_registry_name: Enriches generated metadata with format
             registry name. Name identifying a format registry, if a format
             registry is used to give further information about the file format.
@@ -369,16 +377,16 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             )
 
         _generate_metadata_argument_validation(
-            ovr_file_format,
-            ovr_file_format_version,
-            ovr_checksum_algorithm,
-            ovr_checksum
+            predef_file_format,
+            predef_file_format_version,
+            predef_checksum_algorithm,
+            predef_checksum
         )
 
         scraper = self._scrape_file(
-            mimetype=ovr_file_format,
-            version=ovr_file_format_version,
-            charset=ovr_charset
+            mimetype=predef_file_format,
+            version=predef_file_format_version,
+            charset=predef_charset
         )
         # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
@@ -386,15 +394,15 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         metadata = self._create_technical_object_metadata(
             scraper,
             stream,
-            ovr_file_format=ovr_file_format,
-            ovr_file_format_version=ovr_file_format_version,
-            ovr_checksum_algorithm=ovr_checksum_algorithm,
-            ovr_checksum=ovr_checksum,
-            ovr_file_created_date=ovr_file_created_date,
-            ovr_object_identifier_type=ovr_object_identifier_type,
-            ovr_object_identifier=ovr_object_identifier,
-            ovr_charset=ovr_charset,
-            ovr_original_name=ovr_original_name,
+            predef_file_format=predef_file_format,
+            predef_file_format_version=predef_file_format_version,
+            predef_checksum_algorithm=predef_checksum_algorithm,
+            predef_checksum=predef_checksum,
+            predef_file_created_date=predef_file_created_date,
+            predef_object_identifier_type=predef_object_identifier_type,
+            predef_object_identifier=predef_object_identifier,
+            predef_charset=predef_charset,
+            predef_original_name=predef_original_name,
             format_registry_name=format_registry_name,
             format_registry_key=format_registry_key,
             creating_application=creating_application,
@@ -417,9 +425,9 @@ class SIPDigitalObject(mets_builder.DigitalObject):
     def generate_technical_csv_metadata(
         self,
         has_header: bool,
-        ovr_delimiter: Optional[str] = None,
-        ovr_record_separator: Optional[str] = None,
-        ovr_quoting_character: Optional[str] = None,
+        predef_delimiter: Optional[str] = None,
+        predef_record_separator: Optional[str] = None,
+        predef_quoting_character: Optional[str] = None,
         **kwargs
     ) -> None:
         """Generate technical metadata for this digital object.
@@ -431,38 +439,40 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         This method calls generate_technical_metadata method under the hood for
         creating the more generic technical object metadata. Any keyword
         arguments that can be given to generate_technical_metadata can also be
-        given here, except for ovr_file_format and ovr_file_format_version,
-        which are set automatically to "text/csv" and "(:unap)". See
-        generate_technical_metadata documentation for description what the
-        method does, as well as the available parameters and their
-        descriptions.
+        given here, except for predef_file_format and
+        predef_file_format_version, which are set automatically to "text/csv"
+        and "(:unap)". See generate_technical_metadata documentation for
+        description what the method does, as well as the available parameters
+        and their descriptions.
 
         In addition, this method creates CSV specific technical metadata object
         mets_builder.metadata.TechnicalCSVMetadata, and adds it to this
         digital object. The generated metadata is overridden with the
-        user-given values, whenever provided. It is possible, however, to
-        provide no overriding values at all and use only scraped values.
+        user-given predefined values, whenever provided. It is possible,
+        however, to provide no predefined values at all and use only scraped
+        values.
 
         :param has_header: A boolean indicating whether this CSV file has a
             header row or not. If set as True, the first row of the file is
             used as header information. If set as False, the header metadata is
             set as "header1", "header2", etc. according to the number of fields
             in a row.
-        :param ovr_delimiter: Overrides the scraped delimiter character(s). The
-            character or combination of characters that are used to separate
-            fields in the CSV file.
-        :param ovr_record_separator: Overrides the scraped record separator
-            character(s). The character or combination of characters that are
-            used to separate records in the CSV file.
-        :param ovr_quoting_character: Overrides the scraped quoting character.
-            The character that is used to encapsulate values in the CSV file.
-            Encapsulated values can include characters that are otherwise
-            treated in a special way, such as the delimiter character.
+        :param predef_delimiter: Overrides the scraped delimiter character(s)
+            with a predefined value. The character or combination of characters
+            that are used to separate fields in the CSV file.
+        :param predef_record_separator: Overrides the scraped record separator
+            character(s) with a predefined value. The character or combination
+            of characters that are used to separate records in the CSV file.
+        :param predef_quoting_character: Overrides the scraped quoting
+            character with a predefined value. The character that is used to
+            encapsulate values in the CSV file. Encapsulated values can
+            include characters that are otherwise treated in a special way,
+            such as the delimiter character.
         """
         # Generate PREMIS:OBJECT metadata with the generic method
         self.generate_technical_metadata(
-            ovr_file_format="text/csv",
-            ovr_file_format_version="(:unap)",
+            predef_file_format="text/csv",
+            predef_file_format_version="(:unap)",
             **kwargs
         )
 
@@ -470,7 +480,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         scraper = self._scrape_file(
             mimetype="text/csv",
             version="(:unap)",
-            charset=kwargs.get("ovr_charset")
+            charset=kwargs.get("predef_charset")
         )
 
         # For CSV files, a single stream can be assumed
@@ -487,11 +497,13 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         metadata = mets_builder.metadata.TechnicalCSVMetadata(
             filenames=[self.sip_filepath],
             header=header,
-            charset=_first(kwargs.get("ovr_charset"), stream["charset"]),
-            delimiter=_first(ovr_delimiter, stream["delimiter"]),
-            record_separator=_first(ovr_record_separator, stream["separator"]),
+            charset=_first(kwargs.get("predef_charset"), stream["charset"]),
+            delimiter=_first(predef_delimiter, stream["delimiter"]),
+            record_separator=_first(
+                predef_record_separator, stream["separator"]
+            ),
             quoting_character=_first(
-                ovr_quoting_character, stream["quotechar"]
+                predef_quoting_character, stream["quotechar"]
             )
         )
 
