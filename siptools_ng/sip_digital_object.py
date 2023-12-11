@@ -187,6 +187,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """
         self.source_filepath = Path(source_filepath)
         self._technical_metadata_generated = False
+        self._scrape_cache = None
 
         super().__init__(
             sip_filepath=sip_filepath,
@@ -221,7 +222,15 @@ class SIPDigitalObject(mets_builder.DigitalObject):
     def _scrape_file(
         self, mimetype=None, version=None, charset=None
     ) -> Scraper:
-        """Scrape file using file-scraper."""
+        """Scrape file using file-scraper.
+
+        When the scraping is done, the scraper is cached for later use. If
+        cached scraper is found, the cached scraper is returned and scraping is
+        skipped.
+        """
+        if self._scrape_cache:
+            return self._scrape_cache
+
         scraper = Scraper(
             filename=str(self.source_filepath),
             mimetype=mimetype,
@@ -229,6 +238,8 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             charset=charset
         )
         scraper.scrape(check_wellformed=False)
+        self._scrape_cache = scraper
+
         return scraper
 
     def _create_technical_object_metadata(
