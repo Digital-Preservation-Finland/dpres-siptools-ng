@@ -290,6 +290,81 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             creating_application_version=creating_application_version
         )
 
+    def _generate_technical_metadata(
+        self,
+        predef_file_format: Optional[str] = None,
+        predef_file_format_version: Optional[str] = None,
+        predef_checksum_algorithm: Union[
+            mets_builder.metadata.ChecksumAlgorithm, str, None
+        ] = None,
+        predef_checksum: Optional[str] = None,
+        predef_file_created_date: Optional[str] = None,
+        predef_object_identifier_type: Optional[str] = None,
+        predef_object_identifier: Optional[str] = None,
+        predef_charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        predef_original_name: Optional[str] = None,
+        format_registry_name: Optional[str] = None,
+        format_registry_key: Optional[str] = None,
+        creating_application: Optional[str] = None,
+        creating_application_version: Optional[str] = None,
+    ):
+        """Generate technical metadata for digital objects.
+
+        See the public corresponding method generate_technical_metadata for
+        more documentation.
+        """
+        if self._technical_metadata_generated:
+            raise MetadataGenerationError(
+                "Technical metadata has already been generated for the "
+                "digital object."
+            )
+
+        _generate_metadata_argument_validation(
+            predef_file_format,
+            predef_file_format_version,
+            predef_checksum_algorithm,
+            predef_checksum
+        )
+
+        scraper = self._scrape_file(
+            mimetype=predef_file_format,
+            version=predef_file_format_version,
+            charset=predef_charset
+        )
+        # TODO: Handle streams, do not assume object has only one stream
+        stream = scraper.streams[0]
+
+        metadata = self._create_technical_object_metadata(
+            scraper,
+            stream,
+            predef_file_format=predef_file_format,
+            predef_file_format_version=predef_file_format_version,
+            predef_checksum_algorithm=predef_checksum_algorithm,
+            predef_checksum=predef_checksum,
+            predef_file_created_date=predef_file_created_date,
+            predef_object_identifier_type=predef_object_identifier_type,
+            predef_object_identifier=predef_object_identifier,
+            predef_charset=predef_charset,
+            predef_original_name=predef_original_name,
+            format_registry_name=format_registry_name,
+            format_registry_key=format_registry_key,
+            creating_application=creating_application,
+            creating_application_version=creating_application_version
+        )
+        self.add_metadata(metadata)
+
+        if stream["stream_type"] == "image":
+            metadata = _create_technical_image_metadata(stream)
+            self.add_metadata(metadata)
+        if stream["stream_type"] == "audio":
+            metadata = _create_technical_audio_metadata(stream)
+            self.add_metadata(metadata)
+        if stream["stream_type"] == "video":
+            metadata = _create_technical_video_metadata(stream)
+            self.add_metadata(metadata)
+
+        self._technical_metadata_generated = True
+
     def generate_technical_metadata(
         self,
         predef_file_format: Optional[str] = None,
@@ -381,30 +456,14 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             used to create this file. When set, creating_application has to be
             set as well.
         """
-        if self._technical_metadata_generated:
-            raise MetadataGenerationError(
-                "Technical metadata has already been generated for the "
-                "digital object."
+        if predef_file_format == "text/csv":
+            raise ValueError(
+                "Given predef_file_format is 'text/csv'. Use specialized "
+                "method generate_technical_csv_metadata to generate metadata "
+                "for CSV files."
             )
 
-        _generate_metadata_argument_validation(
-            predef_file_format,
-            predef_file_format_version,
-            predef_checksum_algorithm,
-            predef_checksum
-        )
-
-        scraper = self._scrape_file(
-            mimetype=predef_file_format,
-            version=predef_file_format_version,
-            charset=predef_charset
-        )
-        # TODO: Handle streams, do not assume object has only one stream
-        stream = scraper.streams[0]
-
-        metadata = self._create_technical_object_metadata(
-            scraper,
-            stream,
+        self._generate_technical_metadata(
             predef_file_format=predef_file_format,
             predef_file_format_version=predef_file_format_version,
             predef_checksum_algorithm=predef_checksum_algorithm,
@@ -419,19 +478,6 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-        self.add_metadata(metadata)
-
-        if stream["stream_type"] == "image":
-            metadata = _create_technical_image_metadata(stream)
-            self.add_metadata(metadata)
-        if stream["stream_type"] == "audio":
-            metadata = _create_technical_audio_metadata(stream)
-            self.add_metadata(metadata)
-        if stream["stream_type"] == "video":
-            metadata = _create_technical_video_metadata(stream)
-            self.add_metadata(metadata)
-
-        self._technical_metadata_generated = True
 
     def generate_technical_csv_metadata(
         self,
@@ -481,7 +527,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             such as the delimiter character.
         """
         # Generate PREMIS:OBJECT metadata with the generic method
-        self.generate_technical_metadata(
+        self._generate_technical_metadata(
             predef_file_format="text/csv",
             predef_file_format_version="(:unap)",
             **kwargs
