@@ -253,7 +253,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         return scraper
 
-    def _create_technical_object_metadata(
+    def _create_technical_file_object_metadata(
         self,
         scraper: Scraper,
         stream: dict,
@@ -272,11 +272,11 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
         creating_application_version: Optional[str] = None
-    ) -> mets_builder.metadata.TechnicalObjectMetadata:
+    ) -> mets_builder.metadata.TechnicalFileObjectMetadata:
         """Create technical object metadata object from file-scraper scraper
         and stream.
         """
-        return mets_builder.metadata.TechnicalObjectMetadata(
+        return mets_builder.metadata.TechnicalFileObjectMetadata(
             file_format=_first(predef_file_format, scraper.mimetype),
             file_format_version=_first(
                 predef_file_format_version, scraper.version
@@ -345,7 +345,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
 
-        metadata = self._create_technical_object_metadata(
+        metadata = self._create_technical_file_object_metadata(
             scraper,
             stream,
             predef_file_format=predef_file_format,
@@ -403,8 +403,8 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         Scrapes the file found in SIPDigitalObject.source_filepath, turning the
         scraped information into a
-        mets_builder.metadata.TechnicalObjectMetadata object, and finally adds
-        the metadata to this digital object.
+        mets_builder.metadata.TechnicalFileObjectMetadata object, and finally
+        adds the metadata to this digital object.
 
         The metadata is overridden or enriched with the user-given predefined
         values, whenever provided. It is possible, however, to provide no

@@ -5,7 +5,7 @@ import pytest
 from mets_builder.metadata import (TechnicalAudioMetadata,
                                    TechnicalCSVMetadata,
                                    TechnicalImageMetadata,
-                                   TechnicalObjectMetadata,
+                                   TechnicalFileObjectMetadata,
                                    TechnicalVideoMetadata)
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
@@ -89,7 +89,7 @@ def test_generating_technical_metadata_for_image():
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
-        if isinstance(data, TechnicalObjectMetadata)
+        if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
     assert metadata.file_format == "image/tiff"
     assert metadata.file_format_version == "6.0"
@@ -156,7 +156,7 @@ def test_generating_technical_metadata_for_audio():
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
-        if isinstance(data, TechnicalObjectMetadata)
+        if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
     assert metadata.file_format == "audio/x-wav"
     assert metadata.file_format_version == "(:unap)"
@@ -207,7 +207,7 @@ def test_generating_technical_metadata_for_video():
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
-        if isinstance(data, TechnicalObjectMetadata)
+        if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
     assert metadata.file_format == "video/dv"
     assert metadata.file_format_version == "(:unap)"
@@ -397,7 +397,7 @@ def test_generating_technical_metadata_for_csv_file(
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
-        if isinstance(data, TechnicalObjectMetadata)
+        if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
     assert metadata.file_format == "text/csv"
     assert metadata.file_format_version == "(:unap)"
