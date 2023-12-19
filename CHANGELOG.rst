@@ -3,6 +3,7 @@ Changelog
 
 Unreleased
 ----------
+- Added method ``SIPDigitalObject.generate_technical_csv_metadata()`` to generate CSV metadata
 - Added generating video metadata (VideoMD) in ``SIPDigitalObject.generate_technical_metadata()``
 - Added generating audio metadata (AudioMD) in ``SIPDigitalObject.generate_technical_metadata()``
 - Added RHEL9 compatible RPM spec file
