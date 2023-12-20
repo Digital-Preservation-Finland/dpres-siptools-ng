@@ -7,6 +7,7 @@ from typing import Iterable, Optional, Union
 import mets_builder
 from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
+from mets_builder.metadata.technical_audio_metadata import DataRateMode
 
 
 def _first(*priority_order):
@@ -99,9 +100,19 @@ def _create_technical_audio_metadata(
     stream: dict
 ) -> mets_builder.metadata.TechnicalAudioMetadata:
     """Create technical audio metadata from file-scraper stream."""
+    data_rate_mode = stream["data_rate_mode"]
+    data_rate = stream.get("data_rate", "0")
+    if data_rate_mode == DataRateMode.VARIABLE.value and data_rate == UNAV:
+        # If the audio stream has variable data rate, normalize file-scraper
+        # value "(:unav)" to 0.
+        # AudioMD schema doesn't define how a variable data rate should be
+        # calculated but insists that integer value is provided, so
+        # provide zero as we've done in dpres-siptools.
+        data_rate = 0
+
     return mets_builder.metadata.TechnicalAudioMetadata(
         codec_quality=stream["codec_quality"],
-        data_rate_mode=stream["data_rate_mode"],
+        data_rate_mode=data_rate_mode,
         audio_data_encoding=stream.get("audio_data_encoding", UNAV),
         bits_per_sample=stream.get("bits_per_sample", "0"),
         codec_creator_app=stream.get("codec_creator_app", UNAV),
@@ -109,7 +120,7 @@ def _create_technical_audio_metadata(
             "codec_creator_app_version", UNAV
         ),
         codec_name=stream.get("codec_name", UNAV),
-        data_rate=stream.get("data_rate", "0"),
+        data_rate=data_rate,
         sampling_frequency=stream.get("sampling_frequency", "0"),
         duration=stream.get("duration", UNAV),
         num_channels=stream.get("num_channels", UNAV)
