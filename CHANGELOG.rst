@@ -10,7 +10,6 @@ Unreleased
 Added
 ^^^^^
 - Method ``SIPDigitalObject.generate_technical_csv_metadata()`` to generate CSV metadata
-- RHEL9 compatible RPM spec file
 
 Changed
 ^^^^^^^
