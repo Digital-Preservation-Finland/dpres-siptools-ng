@@ -10,6 +10,7 @@ Unreleased
 Added
 ^^^^^
 - Method ``SIPDigitalObject.generate_technical_csv_metadata()`` to generate CSV metadata
+- Generate stream metadata in ``SIPDigitalObject.generate_technical_metadata()``
 
 Changed
 ^^^^^^^

@@ -21,6 +21,25 @@ def _first(*priority_order):
     )
 
 
+def _create_technical_media_metadata(stream: dict) -> \
+        Optional[mets_builder.metadata.TechnicalObjectMetadata]:
+    """
+    Generate technical media metadata for a stream if applicable
+    (eg. AudioMD for audio streams, MixMD for image and VideoMD for video).
+
+    :param stream: Individual stream metadata as returned by file-scraper
+    """
+    stream_type = stream["stream_type"]
+    if stream_type == "image":
+        return _create_technical_image_metadata(stream)
+    if stream_type == "audio":
+        return _create_technical_audio_metadata(stream)
+    if stream_type == "video":
+        return _create_technical_video_metadata(stream)
+
+    return None
+
+
 def _generate_metadata_argument_validation(
     predef_file_format,
     predef_file_format_version,
@@ -342,10 +361,9 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             version=predef_file_format_version,
             charset=predef_charset
         )
-        # TODO: Handle streams, do not assume object has only one stream
         stream = scraper.streams[0]
 
-        metadata = self._create_technical_file_object_metadata(
+        container_metadata = self._create_technical_file_object_metadata(
             scraper,
             stream,
             predef_file_format=predef_file_format,
@@ -362,17 +380,18 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-        self.add_metadata(metadata)
+        self.add_metadata(container_metadata)
 
-        if stream["stream_type"] == "image":
-            metadata = _create_technical_image_metadata(stream)
-            self.add_metadata(metadata)
-        if stream["stream_type"] == "audio":
-            metadata = _create_technical_audio_metadata(stream)
-            self.add_metadata(metadata)
-        if stream["stream_type"] == "video":
-            metadata = _create_technical_video_metadata(stream)
-            self.add_metadata(metadata)
+        # Create media metadata (eg. AudioMD, MixMD, VideoMD)
+        media_metadata = _create_technical_media_metadata(stream)
+        if media_metadata:
+            self.add_metadata(media_metadata)
+
+        if len(scraper.streams) > 1:
+            # Image or video container, add streams
+            self._add_streams(
+                scraper.streams, file_metadata=container_metadata
+            )
 
         self._technical_metadata_generated = True
 
@@ -576,3 +595,44 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         )
 
         self.add_metadata(metadata)
+
+    def _add_streams(
+            self,
+            streams: Iterable[dict],
+            file_metadata: mets_builder.metadata.TechnicalFileObjectMetadata
+    ) -> None:
+        """
+        Create PREMIS elements for the streams of a given file
+        """
+        for i, stream in enumerate(streams.values()):
+            if i == 0:
+                # Skip the container itself
+                continue
+
+            stream_metadata = \
+                mets_builder.metadata.TechnicalBitstreamObjectMetadata(
+                    file_format=stream["mimetype"],
+                    file_format_version=stream["version"]
+                )
+
+            file_metadata.add_relationship(
+                stream_metadata,
+                relationship_type="structural",
+                relationship_subtype="includes"
+            )
+
+            metadatas = [stream_metadata]
+
+            # Generate video/audio metadata if applicable
+            media_metadata = _create_technical_media_metadata(stream)
+            if media_metadata:
+                metadatas.append(media_metadata)
+
+            # Add digital object streams
+            digital_object_stream = mets_builder.DigitalObjectStream(
+                # This is a list of metadata objects, not a single metadata
+                # object
+                metadata=metadatas
+            )
+
+            self.add_stream(digital_object_stream)

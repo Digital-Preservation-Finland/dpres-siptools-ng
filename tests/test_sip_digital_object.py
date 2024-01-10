@@ -1,4 +1,5 @@
 """Test SIPDigitalObject."""
+import itertools
 from datetime import datetime
 
 import pytest
@@ -6,6 +7,7 @@ from mets_builder.metadata import (TechnicalAudioMetadata,
                                    TechnicalCSVMetadata,
                                    TechnicalImageMetadata,
                                    TechnicalFileObjectMetadata,
+                                   TechnicalBitstreamObjectMetadata,
                                    TechnicalVideoMetadata)
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
@@ -246,6 +248,93 @@ def test_generating_technical_metadata_for_video():
     assert metadata.sampling == "4:2:0"
     assert metadata.signal_format == "PAL"
     assert metadata.sound.value == "No"
+
+
+def test_generate_technical_metadata_for_video_container():
+    """
+    Test that generating technical metadata for a video contaier results
+    in correct information and linkings
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_video_ffv_flac.mkv",
+        sip_filepath="sip_data/test_video_ffv_flac.mkv"
+    )
+    digital_object.generate_technical_metadata()
+
+    # Get a flat list of all technical metadata objects; we'll verify their
+    # relationship later.
+    metadatas = list(
+        # Flatten the list of metadata objects for each stream
+        itertools.chain.from_iterable([
+            stream.metadata for stream in digital_object.streams
+        ])
+    ) + list(digital_object.metadata)
+
+    # Three technical metadata objects are created
+    ffv_bitstream = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalBitstreamObjectMetadata)
+        and metadata.file_format == "video/x-ffv"
+    )
+    assert ffv_bitstream.file_format_version == "3"
+
+    flac_bitstream = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalBitstreamObjectMetadata)
+        and metadata.file_format == "audio/flac"
+    )
+    assert flac_bitstream.file_format_version == "1.2.1"
+
+    container = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalFileObjectMetadata)
+    )
+    assert container.file_format == "video/x-matroska"
+    assert container.file_format_version == "4"
+    assert container.checksum == "070822f0f55d612782ac587f9e53c37d"
+    assert container.checksum_algorithm.value == "MD5"
+
+    # Check that correct linkings are made
+    assert len(container.relationships) == 2
+    assert any(
+        relationship for relationship in container.relationships
+        if relationship.object_identifier == ffv_bitstream.object_identifier
+    )
+    assert any(
+        relationship for relationship in container.relationships
+        if relationship.object_identifier == flac_bitstream.object_identifier
+    )
+
+    # Check that streams are added into the digital object
+    assert len(digital_object.streams) == 2
+
+    audio_stream = next(
+        stream for stream in digital_object.streams
+        if flac_bitstream in stream.metadata
+    )
+    video_stream = next(
+        stream for stream in digital_object.streams
+        if ffv_bitstream in stream.metadata
+    )
+
+    # Each DigitalObjectStream contains a TechnicalBitstreamObjectMetadata and
+    # another technical media metadata object
+    # (TechnicalAudioMetadata/TechnicalVideoMetadata)
+    audio_metadata = next(
+        metadata for metadata in audio_stream.metadata
+        if id(metadata) != id(flac_bitstream)
+    )
+    video_metadata = next(
+        metadata for metadata in video_stream.metadata
+        if id(metadata) != id(ffv_bitstream)
+    )
+
+    assert audio_metadata.codec_name == "FLAC"
+    assert audio_metadata.format_version == "2.0"
+    assert audio_metadata.data_rate_mode.value == "Variable"
+
+    assert video_metadata.codec_name == "FFV1"
+    assert video_metadata.sampling == "4:2:0"
 
 
 def test_generate_metadata_with_predefined_values():
