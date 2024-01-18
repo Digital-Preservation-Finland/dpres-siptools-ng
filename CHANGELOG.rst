@@ -17,6 +17,10 @@ Changed
 - Video metadata (VideoMD) is generated in ``SIPDigitalObject.generate_technical_metadata()``
 - Audio metadata (AudioMD) is generated in ``SIPDigitalObject.generate_technical_metadata()``
 
+Fixed
+^^^^^
+- Fix invalid technical metadata values by normalizing ``(:unav)`` to ``0`` when applicable
+
 0.0.2 - 2023-06-14
 ------------------
 Added

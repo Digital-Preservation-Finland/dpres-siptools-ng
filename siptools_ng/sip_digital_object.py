@@ -7,7 +7,6 @@ from typing import Iterable, Optional, Union
 import mets_builder
 from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
-from mets_builder.metadata.technical_audio_metadata import DataRateMode
 
 
 def _first(*priority_order):
@@ -19,6 +18,17 @@ def _first(*priority_order):
         (value for value in priority_order if value is not None),
         None
     )
+
+
+def _normalize_unav(value):
+    """
+    Normalize value to "0" if the value is "(:unav)", otherwise return the
+    value as-is
+    """
+    if value == UNAV:
+        return "0"
+
+    return value
 
 
 def _create_technical_media_metadata(stream: dict) -> \
@@ -119,28 +129,20 @@ def _create_technical_audio_metadata(
     stream: dict
 ) -> mets_builder.metadata.TechnicalAudioMetadata:
     """Create technical audio metadata from file-scraper stream."""
-    data_rate_mode = stream["data_rate_mode"]
-    data_rate = stream.get("data_rate", "0")
-    if data_rate_mode == DataRateMode.VARIABLE.value and data_rate == UNAV:
-        # If the audio stream has variable data rate, normalize file-scraper
-        # value "(:unav)" to 0.
-        # AudioMD schema doesn't define how a variable data rate should be
-        # calculated but insists that integer value is provided, so
-        # provide zero as we've done in dpres-siptools.
-        data_rate = 0
-
     return mets_builder.metadata.TechnicalAudioMetadata(
         codec_quality=stream["codec_quality"],
-        data_rate_mode=data_rate_mode,
+        data_rate_mode=stream["data_rate_mode"],
         audio_data_encoding=stream.get("audio_data_encoding", UNAV),
-        bits_per_sample=stream.get("bits_per_sample", "0"),
+        bits_per_sample=_normalize_unav(stream.get("bits_per_sample", "0")),
         codec_creator_app=stream.get("codec_creator_app", UNAV),
         codec_creator_app_version=stream.get(
             "codec_creator_app_version", UNAV
         ),
         codec_name=stream.get("codec_name", UNAV),
-        data_rate=data_rate,
-        sampling_frequency=stream.get("sampling_frequency", "0"),
+        data_rate=_normalize_unav(stream.get("data_rate", "0")),
+        sampling_frequency=_normalize_unav(
+            stream.get("sampling_frequency", "0")
+        ),
         duration=stream.get("duration", UNAV),
         num_channels=stream.get("num_channels", UNAV)
     )
@@ -152,8 +154,8 @@ def _create_technical_video_metadata(
     """Create technical video metadata from file-scraper stream."""
     return mets_builder.metadata.TechnicalVideoMetadata(
         duration=stream.get("duration", UNAV),
-        data_rate=stream.get("data_rate", "0"),
-        bits_per_sample=stream.get("bits_per_sample", "0"),
+        data_rate=_normalize_unav(stream.get("data_rate", "0")),
+        bits_per_sample=_normalize_unav(stream.get("bits_per_sample", "0")),
         color=stream["color"],
         codec_creator_app=stream.get("codec_creator_app", UNAV),
         codec_creator_app_version=stream.get(
@@ -162,10 +164,10 @@ def _create_technical_video_metadata(
         codec_name=stream.get("codec_name", UNAV),
         codec_quality=stream["codec_quality"],
         data_rate_mode=stream["data_rate_mode"],
-        frame_rate=stream.get("frame_rate", "0"),
-        pixels_horizontal=stream.get("width", "0"),
-        pixels_vertical=stream.get("height", "0"),
-        par=stream.get("par", "0"),
+        frame_rate=_normalize_unav(stream.get("frame_rate", "0")),
+        pixels_horizontal=_normalize_unav(stream.get("width", "0")),
+        pixels_vertical=_normalize_unav(stream.get("height", "0")),
+        par=_normalize_unav(stream.get("par", "0")),
         dar=stream.get("dar", UNAV),
         sampling=stream.get("sampling", UNAV),
         signal_format=stream.get("signal_format", UNAV),
