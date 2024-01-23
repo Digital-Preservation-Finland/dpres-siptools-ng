@@ -215,6 +215,96 @@ def test_stream_relationships_in_sip_mets(tmp_path):
     ]) == 1
 
 
+def test_mets_technical_metadata_deduplicate(tmp_path):
+    """
+    Test that identical technical metadata shared by multiple digital objects
+    is deduplicated in the generated METS.
+    """
+    mets = METS(
+        mets_profile=MetsProfile.CULTURAL_HERITAGE,
+        contract_id="contract_id",
+        creator_name="Mr. Foo",
+        creator_type="INDIVIDUAL"
+    )
+    # Four instances of the same Matroska video file
+    digital_objects = [
+        SIPDigitalObject(
+            source_filepath="tests/data/test_video_ffv_flac.mkv",
+            sip_filepath=f"data/files/test_video_{i}.mkv"
+        )
+        for i in range(0, 4)
+    ]
+    # One different digital object
+    digital_objects.append(
+        SIPDigitalObject(
+            source_filepath="tests/data/test_video.dv",
+            sip_filepath="data/files/test_video.dv"
+        )
+    )
+    for digital_object in digital_objects:
+        digital_object.generate_technical_metadata()
+
+    root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
+    structural_map = StructuralMap(root_div=root_div)
+    mets.add_structural_map(structural_map)
+    mets.generate_file_references()
+
+    xml = mets.to_xml()
+    xml_root = etree.fromstring(xml)
+
+    # Ensure the file group is defined and contains the file and its streams
+    assert len(xml_root.xpath("//mets:file", namespaces=_NAMESPACES)) == 5
+
+    # Only two VideoMD objects are generated:
+    # one for MKV which is reused for all 4 MKV files,
+    # and another for the sole DV file
+    assert len(xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)) == 2
+    mkv_videomd_id = next(
+        vmd for vmd
+        in xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)
+        if vmd.xpath(
+            ".//videomd:codecName[text()='FFV1']", namespaces=_NAMESPACES
+        )
+    ).xpath("../../..")[0].attrib["ID"]
+    dv_videomd_id = next(
+        vmd for vmd
+        in xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)
+        if vmd.xpath(
+            ".//videomd:codecName[text()='DV']", namespaces=_NAMESPACES
+        )
+    ).xpath("../../..")[0].attrib["ID"]
+
+    # Only one AudioMD object is generated
+    assert len(xml_root.xpath("//audiomd:AUDIOMD", namespaces=_NAMESPACES)) == 1
+    mkv_audiomd = xml_root.xpath("//audiomd:AUDIOMD", namespaces=_NAMESPACES)[0]
+    mkv_audiomd_id = mkv_audiomd.xpath("../../..")[0].attrib["ID"]
+
+    # Get MKV file references
+    mkv_files = xml_root.xpath(
+        "//mets:FLocat[contains(@xlink:href, '.mkv')]/..",
+        namespaces=_NAMESPACES
+    )
+    assert len(mkv_files) == 4
+
+    for mkv_file in mkv_files:
+        # Each MKV file contains a reference to deduplicated VideoMD and
+        # AudioMD streams
+        assert mkv_file.xpath(
+            f"./mets:stream[contains(@ADMID, '{mkv_videomd_id}')]",
+            namespaces=_NAMESPACES
+        )
+        assert mkv_file.xpath(
+            f"./mets:stream[contains(@ADMID, '{mkv_audiomd_id}')]",
+            namespaces=_NAMESPACES
+        )
+
+        # There are *no* references to the DV VideoMD data
+        assert not mkv_file.xpath(
+            f"./mets:stream[contains(@ADMID, '{dv_videomd_id}')]",
+            namespaces=_NAMESPACES
+        )
+
+
 def test_signature_in_sip(tmp_path, simple_sip):
     """Test that the finalized SIP has a signature file with a correct sha sum
     for the METS file in it.
