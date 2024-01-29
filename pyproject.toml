@@ -10,3 +10,4 @@ build-backend = "setuptools.build_meta"
 dynamic = ["version"]
 
 [tool.setuptools_scm]
+write_to = "siptools_ng/_version.py"

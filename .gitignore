@@ -51,3 +51,4 @@ venv.bak/
 *.swp
 
 rpmbuild
+siptools_ng/_version.py
