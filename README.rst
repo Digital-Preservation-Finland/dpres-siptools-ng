@@ -1,32 +1,34 @@
-**NOTE: The project is not ready for production use. It is published prematurely to give an opportunity to get acquainted with the project in advance and to get feedback.**
+**NOTE: The project is not ready for production use. It is published prematurely to give an opportunity
+to get acquainted with the project in advance and to get feedback.**
 
 To give feedback, please open a GitHub issue or pull request.
 
 dpres-siptools-ng
 =================
 
-Library for creating Submission Information Packages (SIP) that comply to the specifications of national digital preservation services of Finland.
+Library for creating Submission Information Packages (SIP) that comply to the specifications of
+national digital preservation services of Finland.
 
-Installation
------------
-Installation requires Python 3.6 or newer. The software has been tested using
-CentOS 7.
+Requirements
+------------
 
-You can install the application inside a virtualenv using the following
-instructions.
+Installation and usage requires Python 3.9 or newer.
+To use siptools-ng you will also have to install file-scraper and it's dependencies.
+See https://github.com/Digital-Preservation-Finland/file-scraper for instructions.
 
-To create a virtualenv, activate it and install dependencies as well as the package itself, run::
+The software is tested with Python 3.9 on AlmaLinux 9 release.
 
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip setuptools
-    pip install -r requirements_dev.txt
-    pip install .
+Installation using RPM packages (preferred)
+-------------------------------------------
 
-To deactivate the virtualenv, run ``deactivate``. The created virtualenv needs
-to be active in order to use dpres-siptools-ng.
+Installation on Linux distributions is done by using the RPM Package Manager.
+See how to `configure the PAS-jakelu RPM repositories`_ to setup necessary software sources.
 
-To use siptools-ng you will also have to install file-scraper and it's dependencies. See https://github.com/Digital-Preservation-Finland/file-scraper for instructions.
+.. _configure the PAS-jakelu RPM repositories: https://www.digitalpreservation.fi/user_guide/installation_of_tools 
+
+After the repository has been added, the package can be installed by running the following command::
+
+    sudo dnf install python3-dpres-siptools-ng
 
 Usage
 -----
@@ -54,6 +56,30 @@ See the usage documentation of ``dpres-mets-builder`` for instructions to build 
         output_filepath="sip.tar",
         sign_key_filepath="rsa-keys.crt"
     )
+
+Installation using Python Virtualenv for development purposes
+-------------------------------------------------------------
+
+You can install the application inside a virtualenv using the following
+instructions.
+
+
+Create a virtual environment::
+    
+    python3 -m venv venv
+
+Run the following to activate the virtual environment::
+
+    source venv/bin/activate
+
+Install the required software with commands::
+
+    pip install --upgrade pip==20.2.4 setuptools
+    pip install -r requirements_github.txt
+    pip install .
+
+To deactivate the virtual environment, run ``deactivate``.
+To reactivate it, run the ``source`` command above.
 
 Copyright
 ---------
