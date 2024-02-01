@@ -11,6 +11,7 @@ Added
 ^^^^^
 - Method ``SIPDigitalObject.generate_technical_csv_metadata()`` to generate CSV metadata
 - Generate stream metadata in ``SIPDigitalObject.generate_technical_metadata()``
+- Method ``SIP.from_directory`` to generate a SIP object according to the contents of a directory
 
 Changed
 ^^^^^^^

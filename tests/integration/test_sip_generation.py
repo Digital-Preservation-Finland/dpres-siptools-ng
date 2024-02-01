@@ -3,6 +3,7 @@ Test generation of complete SIPs and validate various traits in the final
 SIP
 """
 import tarfile
+from pathlib import Path
 
 from lxml import etree
 from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
@@ -256,4 +257,70 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
         )
 
 
+def test_generating_sip_from_directory(tmp_path, simple_mets):
+    """Test that it's possible to generate SIP automatically from a given
+    directory filepath.
 
+    Files found in the directory tree should be detected, technical metadata
+    generated for the files and the struct map correspond to the original
+    directory structure.
+    """
+
+    output_filepath, extracted_filepath = _get_testing_filepaths(tmp_path)
+
+    sip = SIP.from_directory(
+        directory_path="tests/data/generate_sip_from_directory/data",
+        mets=simple_mets
+    )
+    sip.finalize(
+        output_filepath=output_filepath,
+        sign_key_filepath="tests/data/rsa-keys.crt"
+    )
+
+    _extract_sip(output_filepath, extracted_filepath)
+
+    # SIP contains correct files
+    files_filepath = extracted_filepath / "data"
+    sip_files = {path for path in files_filepath.rglob("*") if path.is_file()}
+    assert sip_files == {
+        files_filepath / Path("text_files/test_file.txt"),
+        files_filepath / Path("media_files/test_audio.wav"),
+        files_filepath / Path("media_files/test_video_ffv_flac.mkv")
+    }
+
+    # Technical metadata is generated
+    mets_filepath = extracted_filepath / "mets.xml"
+    mets = etree.parse(str(mets_filepath))
+    # 3 for each file + 2 for streams in the video file
+    assert len(mets.findall(".//*[@MDTYPE='PREMIS:OBJECT']")) == 5
+    # 1 for the audio file + 1 for the audio stream in the video file
+    assert len(mets.findall(".//*[@OTHERMDTYPE='AudioMD']")) == 2
+    # 1 for the video stream in the video file
+    assert len(mets.findall(".//*[@OTHERMDTYPE='VideoMD']")) == 1
+
+    # Test structmap structure: 1 text file in text_files directory, 2 media
+    # files in media_files directory, and preceding divs are nested according
+    # to the original directory structure + a wrapping div with type
+    # "directory"
+    structural_map = mets.find("mets:structMap", namespaces=NAMESPACES)
+    text_files = structural_map.findall(
+        (
+            "mets:div[@TYPE='directory']"
+            "/mets:div[@TYPE='data']"
+            "/mets:div[@TYPE='text_files']"
+            "/mets:fptr"
+        ),
+        namespaces=NAMESPACES
+    )
+    assert len(text_files) == 1
+
+    media_files = structural_map.findall(
+        (
+            "mets:div[@TYPE='directory']"
+            "/mets:div[@TYPE='data']"
+            "/mets:div[@TYPE='media_files']"
+            "/mets:fptr"
+        ),
+        namespaces=NAMESPACES
+    )
+    assert len(media_files) == 2

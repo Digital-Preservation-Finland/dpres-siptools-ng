@@ -103,3 +103,25 @@ def test_sip_is_tar_file(tmp_path, simple_sip):
         sign_key_filepath="tests/data/rsa-keys.crt"
     )
     assert tarfile.is_tarfile(output_filepath)
+
+
+@pytest.mark.parametrize(
+    ("filepath", "error_message"),
+    (
+        (
+            "nonexistent_filepath",
+            "Path 'nonexistent_filepath' does not exist."
+        ),
+        (
+            "tests/data/test_file.txt",
+            "Path 'tests/data/test_file.txt' is not a directory."
+        )
+    )
+)
+def test_generating_sip_from_invalid_filepath(
+    filepath, error_message, simple_mets
+):
+    """Test that trying to generate SIP from invalid path raises error."""
+    with pytest.raises(ValueError) as error:
+        SIP.from_directory(filepath, simple_mets)
+    assert str(error.value) == error_message

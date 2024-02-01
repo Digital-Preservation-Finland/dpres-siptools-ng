@@ -7,6 +7,8 @@ from typing import Union
 import dpres_signature.signature
 import mets_builder
 
+from siptools_ng.sip_digital_object import SIPDigitalObject
+
 METS_FILENAME = "mets.xml"
 SIGNATURE_FILENAME = "signature.sig"
 
@@ -126,3 +128,56 @@ class SIP:
                 )
 
         tmp_sip_filepath.rename(output_filepath)
+
+    @classmethod
+    def from_directory(
+        cls,
+        directory_path: Union[Path, str],
+        mets: mets_builder.METS
+    ) -> "SIP":
+        """Generate a SIP object according to the contents of a directory.
+
+        All files found in the directory tree are detected and technical
+        metadata generated for the files. Structural map is generated according
+        to the directory structure found in the given directory_path, and
+        simple file references are generated.
+
+        :param directory_path: Path to a local directory.
+        :param mets: Initialized METS object. This METS object will be edited
+            in place by this method to represent the files and the directory
+            structure in the given directory_path.
+
+        :raises: ValueError if the given directory_path does not exist or is
+            not a directory.
+
+        :returns: SIP object initialized according to the directory structure
+            in the given path.
+        """
+        directory_path = Path(directory_path)
+        if not directory_path.exists():
+            raise ValueError(f"Path '{str(directory_path)}' does not exist.")
+        if not directory_path.is_dir():
+            raise ValueError(
+                f"Path '{str(directory_path)}' is not a directory."
+            )
+
+        files = {path for path in directory_path.rglob("*") if path.is_file()}
+
+        digital_objects = {
+            SIPDigitalObject(
+                source_filepath=file_,
+                sip_filepath=file_.relative_to(directory_path.parent)
+            )
+            for file_ in files
+        }
+
+        for digital_object in digital_objects:
+            digital_object.generate_technical_metadata()
+
+        structural_map = mets_builder.StructuralMap.from_directory_structure(
+            digital_objects
+        )
+        mets.add_structural_map(structural_map)
+        mets.generate_file_references()
+
+        return SIP(mets=mets)
