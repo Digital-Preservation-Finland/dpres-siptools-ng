@@ -22,21 +22,26 @@ if version.parse(pytest.__version__) < version.parse("3.9.0"):
 
 
 @pytest.fixture
-def simple_sip():
-    """A fixture for preparing a simple SIP object."""
-    mets = METS(
+def simple_mets():
+    """A fixture for preparing a simple METS object."""
+    return METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
         contract_id="contract_id",
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
+
+
+@pytest.fixture
+def simple_sip(simple_mets):
+    """A fixture for preparing a simple SIP object."""
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="test_file.txt"
     )
     root_div = StructuralMapDiv("test_div", digital_objects=[digital_object])
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_map(structural_map)
-    mets.generate_file_references()
+    simple_mets.add_structural_map(structural_map)
+    simple_mets.generate_file_references()
 
-    return SIP(mets=mets)
+    return SIP(mets=simple_mets)
