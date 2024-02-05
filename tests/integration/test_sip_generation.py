@@ -6,7 +6,7 @@ import tarfile
 
 from lxml import etree
 from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
-from mets_builder.serialize import _NAMESPACES
+from mets_builder.serialize import NAMESPACES
 
 from siptools_ng.sip import SIP
 from siptools_ng.sip_digital_object import SIPDigitalObject
@@ -98,11 +98,11 @@ def test_stream_relationships_in_sip_mets(tmp_path):
     bitstream_object_ids = [
         elem.text for elem
         in xml_root.xpath(
-            "//premis:relatedObjectIdentifierValue", namespaces=_NAMESPACES
+            "//premis:relatedObjectIdentifierValue", namespaces=NAMESPACES
         )
     ]
     bitstream_premis_objects = xml_root.xpath(
-        "//premis:object[@xsi:type='premis:bitstream']", namespaces=_NAMESPACES
+        "//premis:object[@xsi:type='premis:bitstream']", namespaces=NAMESPACES
     )
     # The IDs attached to the TechMD element
     bitstream_ids = [
@@ -119,48 +119,48 @@ def test_stream_relationships_in_sip_mets(tmp_path):
         assert len([
             bitstream for bitstream in bitstream_premis_objects
             if bitstream.xpath(
-                ".//premis:objectIdentifierValue", namespaces=_NAMESPACES
+                ".//premis:objectIdentifierValue", namespaces=NAMESPACES
             )[0].text == object_id
         ]) == 1
 
     # Ensure the file group is defined and contains the file and its streams
-    file_object = xml_root.xpath("//mets:file", namespaces=_NAMESPACES)[0]
+    file_object = xml_root.xpath("//mets:file", namespaces=NAMESPACES)[0]
 
     assert file_object.xpath(
-        "./mets:FLocat", namespaces=_NAMESPACES
-    )[0].attrib[f"{{{_NAMESPACES['xlink']}}}href"] \
+        "./mets:FLocat", namespaces=NAMESPACES
+    )[0].attrib[f"{{{NAMESPACES['xlink']}}}href"] \
         == "file:///data/files/test_video.mkv"
 
     # Ensure the file contains links to the bitstreams
     assert len([
         stream for stream in file_object.xpath(
-            "./mets:stream", namespaces=_NAMESPACES
+            "./mets:stream", namespaces=NAMESPACES
         )
         if bitstream_ids[0] in stream.attrib["ADMID"]
     ]) == 1
     assert len([
         stream for stream in file_object.xpath(
-            "./mets:stream", namespaces=_NAMESPACES
+            "./mets:stream", namespaces=NAMESPACES
         )
         if bitstream_ids[1] in stream.attrib["ADMID"]
     ]) == 1
 
-    videomd = xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)[0]
+    videomd = xml_root.xpath("//videomd:VIDEOMD", namespaces=NAMESPACES)[0]
     videomd_id = videomd.getparent().getparent().getparent().attrib["ID"]
 
-    audiomd = xml_root.xpath("//audiomd:AUDIOMD", namespaces=_NAMESPACES)[0]
+    audiomd = xml_root.xpath("//audiomd:AUDIOMD", namespaces=NAMESPACES)[0]
     audiomd_id = audiomd.getparent().getparent().getparent().attrib["ID"]
 
     # Ensure the file contains links to the technical media metadata
     assert len([
         stream for stream in file_object.xpath(
-            "./mets:stream", namespaces=_NAMESPACES
+            "./mets:stream", namespaces=NAMESPACES
         )
         if videomd_id in stream.attrib["ADMID"]
     ]) == 1
     assert len([
         stream for stream in file_object.xpath(
-            "./mets:stream", namespaces=_NAMESPACES
+            "./mets:stream", namespaces=NAMESPACES
         )
         if audiomd_id in stream.attrib["ADMID"]
     ]) == 1
@@ -204,36 +204,36 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
     xml_root = etree.fromstring(xml)
 
     # Ensure the file group is defined and contains the file and its streams
-    assert len(xml_root.xpath("//mets:file", namespaces=_NAMESPACES)) == 5
+    assert len(xml_root.xpath("//mets:file", namespaces=NAMESPACES)) == 5
 
     # Only two VideoMD objects are generated:
     # one for MKV which is reused for all 4 MKV files,
     # and another for the sole DV file
-    assert len(xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)) == 2
+    assert len(xml_root.xpath("//videomd:VIDEOMD", namespaces=NAMESPACES)) == 2
     mkv_videomd_id = next(
         vmd for vmd
-        in xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)
+        in xml_root.xpath("//videomd:VIDEOMD", namespaces=NAMESPACES)
         if vmd.xpath(
-            ".//videomd:codecName[text()='FFV1']", namespaces=_NAMESPACES
+            ".//videomd:codecName[text()='FFV1']", namespaces=NAMESPACES
         )
     ).xpath("../../..")[0].attrib["ID"]
     dv_videomd_id = next(
         vmd for vmd
-        in xml_root.xpath("//videomd:VIDEOMD", namespaces=_NAMESPACES)
+        in xml_root.xpath("//videomd:VIDEOMD", namespaces=NAMESPACES)
         if vmd.xpath(
-            ".//videomd:codecName[text()='DV']", namespaces=_NAMESPACES
+            ".//videomd:codecName[text()='DV']", namespaces=NAMESPACES
         )
     ).xpath("../../..")[0].attrib["ID"]
 
     # Only one AudioMD object is generated
-    assert len(xml_root.xpath("//audiomd:AUDIOMD", namespaces=_NAMESPACES)) == 1
-    mkv_audiomd = xml_root.xpath("//audiomd:AUDIOMD", namespaces=_NAMESPACES)[0]
+    assert len(xml_root.xpath("//audiomd:AUDIOMD", namespaces=NAMESPACES)) == 1
+    mkv_audiomd = xml_root.xpath("//audiomd:AUDIOMD", namespaces=NAMESPACES)[0]
     mkv_audiomd_id = mkv_audiomd.xpath("../../..")[0].attrib["ID"]
 
     # Get MKV file references
     mkv_files = xml_root.xpath(
         "//mets:FLocat[contains(@xlink:href, '.mkv')]/..",
-        namespaces=_NAMESPACES
+        namespaces=NAMESPACES
     )
     assert len(mkv_files) == 4
 
@@ -242,17 +242,17 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
         # AudioMD streams
         assert mkv_file.xpath(
             f"./mets:stream[contains(@ADMID, '{mkv_videomd_id}')]",
-            namespaces=_NAMESPACES
+            namespaces=NAMESPACES
         )
         assert mkv_file.xpath(
             f"./mets:stream[contains(@ADMID, '{mkv_audiomd_id}')]",
-            namespaces=_NAMESPACES
+            namespaces=NAMESPACES
         )
 
         # There are *no* references to the DV VideoMD data
         assert not mkv_file.xpath(
             f"./mets:stream[contains(@ADMID, '{dv_videomd_id}')]",
-            namespaces=_NAMESPACES
+            namespaces=NAMESPACES
         )
 
 
