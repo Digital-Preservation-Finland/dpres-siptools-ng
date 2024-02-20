@@ -4,7 +4,9 @@ import tarfile
 
 import pytest
 from mets_builder import METS, MetsProfile
+from mets_builder.metadata import DigitalProvenanceEventMetadata
 
+from siptools_ng import digital_provenance
 from siptools_ng.sip import SIP
 
 
@@ -125,3 +127,31 @@ def test_generating_sip_from_invalid_filepath(
     with pytest.raises(ValueError) as error:
         SIP.from_directory(filepath, simple_mets)
     assert str(error.value) == error_message
+
+
+def test_generated_sip_digital_provenance(simple_mets):
+    """Test that SIP generated from directory has siptools-ng represented in
+    the digital provenance metadata.
+    """
+    sip = SIP.from_directory(
+        directory_path="tests/data/generate_sip_from_directory/data",
+        mets=simple_mets
+    )
+
+    structural_map = sip.mets.structural_maps.pop()
+    root_div = structural_map.root_div
+
+    structmap_creation_event = next(
+        metadata for metadata in root_div.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+        and metadata.event_type == "creation"
+    )
+
+    linked_agents = (
+        agent.agent_metadata
+        for agent in structmap_creation_event.linked_agents
+    )
+
+    siptools_ng_agent = digital_provenance.dpres_siptools_ng()
+    assert siptools_ng_agent in root_div.metadata
+    assert siptools_ng_agent in linked_agents

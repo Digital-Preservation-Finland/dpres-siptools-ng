@@ -7,6 +7,7 @@ from typing import Union
 import dpres_signature.signature
 import mets_builder
 
+from siptools_ng import digital_provenance
 from siptools_ng.sip_digital_object import SIPDigitalObject
 
 METS_FILENAME = "mets.xml"
@@ -175,8 +176,10 @@ class SIP:
             digital_object.generate_technical_metadata()
 
         structural_map = mets_builder.StructuralMap.from_directory_structure(
-            digital_objects
+            digital_objects=digital_objects,
+            additional_agents=[digital_provenance.dpres_siptools_ng()]
         )
+
         mets.add_structural_map(structural_map)
         mets.generate_file_references()
 
