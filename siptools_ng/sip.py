@@ -177,7 +177,7 @@ class SIP:
 
         structural_map = mets_builder.StructuralMap.from_directory_structure(
             digital_objects=digital_objects,
-            additional_agents=[digital_provenance.dpres_siptools_ng()]
+            additional_agents=[digital_provenance.get_siptools_ng_agent()]
         )
 
         mets.add_structural_map(structural_map)

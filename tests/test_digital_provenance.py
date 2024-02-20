@@ -2,9 +2,9 @@
 from siptools_ng import __version__, digital_provenance
 
 
-def test_dpres_siptools_ng():
+def test_get_siptools_ng_agent():
     """Test that agent representing siptools-ng has correct information."""
-    agent = digital_provenance.dpres_siptools_ng()
+    agent = digital_provenance.get_siptools_ng_agent()
     assert agent.agent_name == "dpres-siptools-ng"
     assert agent.agent_type.value == "software"
     assert agent.agent_version == __version__

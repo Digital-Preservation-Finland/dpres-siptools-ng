@@ -4,7 +4,7 @@ from mets_builder.metadata import DigitalProvenanceAgentMetadata
 from siptools_ng import __version__
 
 
-def dpres_siptools_ng() -> DigitalProvenanceAgentMetadata:
+def get_siptools_ng_agent() -> DigitalProvenanceAgentMetadata:
     """Return agent metadata representing dpres-siptools-ng itself."""
     return DigitalProvenanceAgentMetadata(
         agent_name="dpres-siptools-ng",
