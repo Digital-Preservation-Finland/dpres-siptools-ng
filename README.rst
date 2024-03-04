@@ -32,6 +32,7 @@ After the repository has been added, the package can be installed by running the
 
 Usage
 -----
+
 Siptools-ng is a layer on top of `dpres-mets-builder <https://github.com/Digital-Preservation-Finland/dpres-mets-builder>`_, providing extended capabilities to work with the METS document and finalize it into a SIP. 
 
 Handling digital objects is different from ``dpres-mets-builder`` in ``dpres-siptools-ng``. Digital objects should be handled using the ``SIPDigitalObject`` class::
@@ -47,15 +48,33 @@ In addition to adding metadata to digital objects like in ``dpres-mets-builder``
 
     digital_object.generate_technical_metadata()
 
+However, CSV files require some aditional information, so there is a separate method to generate technical metadata for CSV files::
+
+    digital_object.generate_technical_csv_metadata(has_header=True)
+
 See the usage documentation of ``dpres-mets-builder`` for instructions to build a ``METS`` object (replacing digital object handling with ``SIPDigitalObject``), and turn it into a SIP with the following commands::
 
+    from mets_builder import METS
     from siptools_ng.sip import SIP
+
+    mets = METS(...)
+
+    # ...build the METS...
 
     sip = SIP(mets=mets)
     sip.finalize(
         output_filepath="sip.tar",
         sign_key_filepath="rsa-keys.crt"
     )
+
+Also, if a directory with all the files to package has been prepared, a SIP where the technical metadata is generated for all the files found in the directory and the structural map is organized according to the directory structure can be kickstarted with a single method::
+
+    mets = METS(...)
+    sip = SIP.from_directory(
+        directory_path="path/to/prepared/directory",
+        mets=mets
+    )
+    sip.finalize(...)
 
 Installation using Python Virtualenv for development purposes
 -------------------------------------------------------------
