@@ -33,6 +33,8 @@ After the repository has been added, the package can be installed by running the
 Usage
 -----
 
+NOTE: see also example code under ``doc/``.
+
 Siptools-ng is a layer on top of `dpres-mets-builder <https://github.com/Digital-Preservation-Finland/dpres-mets-builder>`_, providing extended capabilities to work with the METS document and finalize it into a SIP. 
 
 Handling digital objects is different from ``dpres-mets-builder`` in ``dpres-siptools-ng``. Digital objects should be handled using the ``SIPDigitalObject`` class::
