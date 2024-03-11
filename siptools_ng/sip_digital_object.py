@@ -8,6 +8,8 @@ import mets_builder
 from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
 
+from siptools_ng import digital_provenance
+
 
 def _first(*priority_order):
     """Return the first given value that is not None.
@@ -394,6 +396,10 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             self._add_streams(
                 scraper.streams, file_metadata=container_metadata
             )
+
+        # Create digital provenance
+        if not predef_checksum:
+            digital_provenance.add_checksum_calculation_event(self)
 
         self._technical_metadata_generated = True
 

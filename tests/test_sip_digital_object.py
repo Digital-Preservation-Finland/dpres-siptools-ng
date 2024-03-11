@@ -3,7 +3,8 @@ import itertools
 from datetime import datetime
 
 import pytest
-from mets_builder.metadata import (TechnicalAudioMetadata,
+from mets_builder.metadata import (DigitalProvenanceEventMetadata,
+                                   TechnicalAudioMetadata,
                                    TechnicalCSVMetadata,
                                    TechnicalImageMetadata,
                                    TechnicalFileObjectMetadata,
@@ -56,8 +57,10 @@ def test_generating_technical_metadata_for_text_file():
 
     digital_object.generate_technical_metadata()
 
-    assert len(digital_object.metadata) == 1
-    metadata = digital_object.metadata.pop()
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalFileObjectMetadata)
+    ][0]
 
     assert metadata.file_format == "text/plain"
     assert metadata.file_format_version == "(:unap)"
@@ -85,8 +88,6 @@ def test_generating_technical_metadata_for_image():
     )
 
     digital_object.generate_technical_metadata()
-
-    assert len(digital_object.metadata) == 2
 
     # Technical object metadata
     metadata = [
@@ -153,8 +154,6 @@ def test_generating_technical_metadata_for_audio():
 
     digital_object.generate_technical_metadata()
 
-    assert len(digital_object.metadata) == 2
-
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
@@ -203,8 +202,6 @@ def test_generating_technical_metadata_for_video():
     )
 
     digital_object.generate_technical_metadata()
-
-    assert len(digital_object.metadata) == 2
 
     # Technical object metadata
     metadata = [
@@ -481,8 +478,6 @@ def test_generating_technical_metadata_for_csv_file(
         predef_quoting_character=args.get("predef_quoting_character")
     )
 
-    assert len(digital_object.metadata) == 2
-
     # Technical object metadata
     metadata = [
         data for data in digital_object.metadata
@@ -535,3 +530,45 @@ def test_generating_metadata_for_csv_file_with_wrong_call():
         "Given predef_file_format is 'text/csv'. Use specialized method "
         "generate_technical_csv_metadata to generate metadata for CSV files."
     )
+
+
+def test_checksum_calculation_event():
+    """Test that when checksum is calculated for a digital object, event
+    metadata is created.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_file.txt"
+    )
+    digital_object.generate_technical_metadata()
+
+    checksum_event = next(
+        metadata for metadata in digital_object.metadata
+        if (
+            isinstance(metadata, DigitalProvenanceEventMetadata)
+            and metadata.event_type == "message digest calculation"
+        )
+    )
+    assert checksum_event
+
+
+def test_skip_checksum_calculation_event():
+    """Test that when predefined checksum is given for digital object, no
+    checksum calculation event is linked to the digital object.
+    """
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_file.txt"
+    )
+    digital_object.generate_technical_metadata(
+        predef_checksum_algorithm="MD5",
+        predef_checksum="d8e8fca2dc0f896fd7cb4cb0031ba249"
+    )
+    checksum_events = [
+        metadata for metadata in digital_object.metadata
+        if (
+            isinstance(metadata, DigitalProvenanceEventMetadata)
+            and metadata.event_type == "message digest calculation"
+        )
+    ]
+    assert not checksum_events
