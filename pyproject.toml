@@ -6,8 +6,5 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[project]
-dynamic = ["version"]
-
 [tool.setuptools_scm]
 write_to = "siptools_ng/_version.py"
