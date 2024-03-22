@@ -21,6 +21,6 @@ sip = SIP.from_directory(
 )
 
 sip.finalize(
-    output_filepath="example-automated-sip.tar",
+    output_filepath="result/example-automated-sip.tar",
     sign_key_filepath="../tests/data/rsa-keys.crt"
 )

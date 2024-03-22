@@ -50,6 +50,6 @@ mets.generate_file_references()
 # Turn the METS object into a SIP
 sip = SIP(mets=mets)
 sip.finalize(
-    output_filepath="example-manual-sip.tar",
+    output_filepath="result/example-manual-sip.tar",
     sign_key_filepath="../tests/data/rsa-keys.crt"
 )
