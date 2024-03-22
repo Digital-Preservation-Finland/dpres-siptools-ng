@@ -12,9 +12,7 @@ def get_siptools_ng_agent() -> DigitalProvenanceAgentMetadata:
     return DigitalProvenanceAgentMetadata(
         agent_name="dpres-siptools-ng",
         agent_type="software",
-        agent_version=__version__,
-        agent_identifier_type="local",
-        agent_identifier=f"fi-dpres-dpres-siptools-ng-{__version__}"
+        agent_version=__version__
     )
 
 
@@ -23,9 +21,7 @@ def get_file_scraper_agent() -> DigitalProvenanceAgentMetadata:
     return DigitalProvenanceAgentMetadata(
         agent_name="file-scraper",
         agent_type="software",
-        agent_version=file_scraper_version,
-        agent_identifier_type="local",
-        agent_identifier=f"fi-dpres-file-scraper-{file_scraper_version}"
+        agent_version=file_scraper_version
     )
 
 
@@ -37,9 +33,7 @@ def add_checksum_calculation_event(digital_object: SIPDigitalObject):
         event_outcome="success",
         event_outcome_detail=(
             "Checksum successfully calculated for the digital object."
-        ),
-        event_identifier_type="local",
-        event_identifier="fi-dpres-checksum-calculation"
+        )
     )
     file_scraper_agent = get_file_scraper_agent()
 

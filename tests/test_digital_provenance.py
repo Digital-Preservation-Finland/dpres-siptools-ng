@@ -1,4 +1,6 @@
 """Test digital provenance module."""
+from uuid import UUID
+
 from file_scraper import __version__ as file_scraper_version
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata)
@@ -13,10 +15,8 @@ def test_get_siptools_ng_agent():
     assert agent.agent_name == "dpres-siptools-ng"
     assert agent.agent_type.value == "software"
     assert agent.agent_version == __version__
-    assert agent.agent_identifier_type == "local"
-    assert agent.agent_identifier == (
-        f"fi-dpres-dpres-siptools-ng-{__version__}"
-    )
+    assert agent.agent_identifier_type == "UUID"
+    assert agent.agent_identifier is None
 
 
 def test_get_file_scraper_agent():
@@ -25,10 +25,8 @@ def test_get_file_scraper_agent():
     assert agent.agent_name == "file-scraper"
     assert agent.agent_type.value == "software"
     assert agent.agent_version == file_scraper_version
-    assert agent.agent_identifier_type == "local"
-    assert agent.agent_identifier == (
-        f"fi-dpres-file-scraper-{file_scraper_version}"
-    )
+    assert agent.agent_identifier_type == "UUID"
+    assert agent.agent_identifier is None
 
 
 def test_add_checksum_calculation_event():
@@ -56,10 +54,8 @@ def test_add_checksum_calculation_event():
     assert checksum_event.event_outcome_detail == (
         "Checksum successfully calculated for the digital object."
     )
-    assert checksum_event.event_identifier_type == "local"
-    assert checksum_event.event_identifier == (
-        "fi-dpres-checksum-calculation"
-    )
+    assert checksum_event.event_identifier_type == "UUID"
+    assert checksum_event.event_identifier is None
 
     agent = next(
         metadata for metadata in digital_object.metadata
