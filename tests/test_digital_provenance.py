@@ -48,11 +48,11 @@ def test_add_checksum_calculation_event():
     )
     assert checksum_event.event_type == "message digest calculation"
     assert checksum_event.event_detail == (
-        "Checksum calculation for a digital object"
+        "Checksum calculation for digital objects"
     )
     assert checksum_event.event_outcome.value == "success"
     assert checksum_event.event_outcome_detail == (
-        "Checksum successfully calculated for the digital object."
+        "Checksum successfully calculated for digital objects."
     )
     assert checksum_event.event_identifier_type == "UUID"
     assert checksum_event.event_identifier is None

@@ -29,10 +29,10 @@ def add_checksum_calculation_event(digital_object: SIPDigitalObject):
     """Add checksum calculation event to a digital object."""
     checksum_event = DigitalProvenanceEventMetadata(
         event_type="message digest calculation",
-        event_detail="Checksum calculation for a digital object",
+        event_detail="Checksum calculation for digital objects",
         event_outcome="success",
         event_outcome_detail=(
-            "Checksum successfully calculated for the digital object."
+            "Checksum successfully calculated for digital objects."
         )
     )
     file_scraper_agent = get_file_scraper_agent()
