@@ -3,7 +3,8 @@ import itertools
 from datetime import datetime
 
 import pytest
-from mets_builder.metadata import (DigitalProvenanceEventMetadata,
+from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
+                                   DigitalProvenanceEventMetadata,
                                    TechnicalAudioMetadata,
                                    TechnicalCSVMetadata,
                                    TechnicalImageMetadata,
@@ -11,6 +12,7 @@ from mets_builder.metadata import (DigitalProvenanceEventMetadata,
                                    TechnicalBitstreamObjectMetadata,
                                    TechnicalVideoMetadata)
 
+from siptools_ng.agent import get_file_scraper_agent
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
                                             SIPDigitalObject)
 
@@ -549,7 +551,28 @@ def test_checksum_calculation_event():
             and metadata.event_type == "message digest calculation"
         )
     )
-    assert checksum_event
+    assert checksum_event.event_type == "message digest calculation"
+    assert checksum_event.event_detail == (
+        "Checksum calculation for digital objects"
+    )
+    assert checksum_event.event_outcome.value == "success"
+    assert checksum_event.event_outcome_detail == (
+        "Checksum successfully calculated for digital objects."
+    )
+    assert checksum_event.event_identifier_type == "UUID"
+    assert checksum_event.event_identifier is None
+
+    agent = next(
+        metadata for metadata in digital_object.metadata
+        if isinstance(metadata, DigitalProvenanceAgentMetadata)
+    )
+    assert agent == get_file_scraper_agent()
+
+    linked_agents = [
+        linked_agent.agent_metadata
+        for linked_agent in checksum_event.linked_agents
+    ]
+    assert linked_agents == [get_file_scraper_agent()]
 
 
 def test_skip_checksum_calculation_event():

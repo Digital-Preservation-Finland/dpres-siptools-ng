@@ -7,8 +7,9 @@ from typing import Iterable, Optional, Union
 import mets_builder
 from file_scraper.scraper import Scraper
 from mets_builder.defaults import UNAV
+from mets_builder.metadata import DigitalProvenanceEventMetadata
 
-from siptools_ng import digital_provenance
+import siptools_ng.agent
 
 
 def _first(*priority_order):
@@ -399,7 +400,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         # Create digital provenance
         if not predef_checksum:
-            digital_provenance.add_checksum_calculation_event(self)
+            self.add_checksum_calculation_event()
 
         self._technical_metadata_generated = True
 
@@ -644,3 +645,23 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             )
 
             self.add_stream(digital_object_stream)
+
+    def add_checksum_calculation_event(self):
+        """Add checksum calculation event to a digital object."""
+        checksum_event = DigitalProvenanceEventMetadata(
+            event_type="message digest calculation",
+            event_detail="Checksum calculation for digital objects",
+            event_outcome="success",
+            event_outcome_detail=(
+                "Checksum successfully calculated for digital objects."
+            )
+        )
+        file_scraper_agent = siptools_ng.agent.get_file_scraper_agent()
+
+        checksum_event.link_agent_metadata(
+            agent_metadata=file_scraper_agent,
+            agent_role="executing program"
+        )
+
+        self.add_metadata(checksum_event)
+        self.add_metadata(file_scraper_agent)

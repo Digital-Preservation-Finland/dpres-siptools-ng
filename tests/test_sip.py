@@ -6,7 +6,7 @@ import pytest
 from mets_builder import METS, MetsProfile
 from mets_builder.metadata import DigitalProvenanceEventMetadata
 
-from siptools_ng import digital_provenance
+import siptools_ng.agent
 from siptools_ng.sip import SIP
 
 
@@ -152,6 +152,6 @@ def test_generated_sip_digital_provenance(simple_mets):
         for agent in structmap_creation_event.linked_agents
     )
 
-    siptools_ng_agent = digital_provenance.get_siptools_ng_agent()
+    siptools_ng_agent = siptools_ng.agent.get_siptools_ng_agent()
     assert siptools_ng_agent in root_div.metadata
     assert siptools_ng_agent in linked_agents

@@ -7,7 +7,7 @@ from typing import Union
 import dpres_signature.signature
 import mets_builder
 
-from siptools_ng import digital_provenance
+import siptools_ng.agent
 from siptools_ng.sip_digital_object import SIPDigitalObject
 
 METS_FILENAME = "mets.xml"
@@ -177,7 +177,7 @@ class SIP:
 
         structural_map = mets_builder.StructuralMap.from_directory_structure(
             digital_objects=digital_objects,
-            additional_agents=[digital_provenance.get_siptools_ng_agent()]
+            additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
         )
 
         mets.add_structural_map(structural_map)
