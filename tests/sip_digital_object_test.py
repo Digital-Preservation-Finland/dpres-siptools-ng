@@ -345,15 +345,15 @@ def test_generate_metadata_with_predefined_values():
     )
 
     digital_object.generate_technical_metadata(
-        predef_file_format="predefined_file_format",
-        predef_file_format_version="predefined_file_format_version",
-        predef_checksum_algorithm="SHA-256",
-        predef_checksum="predefined_checksum",
-        predef_file_created_date="predefined_file_created_date",
-        predef_object_identifier_type="predefined_object_identifier_type",
-        predef_object_identifier="predefined_object_identifier",
-        predef_charset="UTF-16",
-        predef_original_name="predefined_original_name",
+        file_format="predefined_file_format",
+        file_format_version="predefined_file_format_version",
+        checksum_algorithm="SHA-256",
+        checksum="predefined_checksum",
+        file_created_date="predefined_file_created_date",
+        object_identifier_type="predefined_object_identifier_type",
+        object_identifier="predefined_object_identifier",
+        charset="UTF-16",
+        original_name="predefined_original_name",
         format_registry_name="predefined_format_registry_name",
         format_registry_key="predefined_format_registry_key",
         creating_application="predefined_creating_application",
@@ -386,15 +386,15 @@ def test_generate_metadata_with_predefined_values():
     ("invalid_init_params", "error_message"),
     (
         (
-            {"predef_file_format_version": "1.0"},
+            {"file_format_version": "1.0"},
             "Predefined file format version is given, but file format is not."
         ),
         (
-            {"predef_checksum_algorithm": "SHA-256"},
+            {"checksum_algorithm": "SHA-256"},
             "Predefined checksum algorithm is given, but checksum is not."
         ),
         (
-            {"predef_checksum": "12345"},
+            {"checksum": "12345"},
             "Predefined checksum is given, but checksum algorithm is not."
         )
     )
@@ -405,9 +405,9 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
-
     with pytest.raises(ValueError) as error:
         digital_object.generate_technical_metadata(**invalid_init_params)
+
     assert str(error.value) == error_message
 
 
@@ -469,12 +469,12 @@ def test_generating_technical_metadata_for_csv_file(
     )
 
     digital_object.generate_technical_metadata(
-        predef_file_format="text/csv",
+        file_format="text/csv",
         has_header=args.get("has_header"),
-        predef_charset=args.get("predef_charset"),
-        predef_delimiter=args.get("predef_delimiter"),
-        predef_record_separator=args.get("predef_record_separator"),
-        predef_quoting_character=args.get("predef_quoting_character")
+        charset=args.get("predef_charset"),
+        delimiter=args.get("predef_delimiter"),
+        record_separator=args.get("predef_record_separator"),
+        quoting_character=args.get("predef_quoting_character")
     )
 
     # Technical object metadata
@@ -560,8 +560,8 @@ def test_skip_checksum_calculation_event():
         sip_filepath="sip_data/test_file.txt"
     )
     digital_object.generate_technical_metadata(
-        predef_checksum_algorithm="MD5",
-        predef_checksum="d8e8fca2dc0f896fd7cb4cb0031ba249"
+        checksum_algorithm="MD5",
+        checksum="d8e8fca2dc0f896fd7cb4cb0031ba249"
     )
     checksum_events = [
         metadata for metadata in digital_object.metadata

@@ -12,17 +12,6 @@ from mets_builder.metadata import DigitalProvenanceEventMetadata
 import siptools_ng.agent
 
 
-def _first(*priority_order):
-    """Return the first given value that is not None.
-
-    If all values are None, return None.
-    """
-    return next(
-        (value for value in priority_order if value is not None),
-        None
-    )
-
-
 def _normalize_unav(value):
     """
     Normalize value to "0" if the value is "(:unav)", otherwise return the
@@ -32,49 +21,6 @@ def _normalize_unav(value):
         return "0"
 
     return value
-
-
-def _create_technical_media_metadata(stream: dict, filepath=None, has_header=None) -> \
-        Optional[mets_builder.metadata.TechnicalObjectMetadata]:
-    """
-    Generate technical media metadata for a stream if applicable
-    (eg. AudioMD for audio streams, MixMD for image and VideoMD for video).
-
-    :param stream: Individual stream metadata as returned by file-scraper
-    """
-    if stream["mimetype"] == "text/csv":
-        return _create_technical_csv_metadata(stream, filepath, has_header)
-    stream_type = stream["stream_type"]
-    if stream_type == "image":
-        return _create_technical_image_metadata(stream)
-    if stream_type == "audio":
-        return _create_technical_audio_metadata(stream)
-    if stream_type == "video":
-        return _create_technical_video_metadata(stream)
-
-    return None
-
-
-def _generate_metadata_argument_validation(
-    predef_file_format,
-    predef_file_format_version,
-    predef_checksum_algorithm,
-    predef_checksum
-):
-    """Validata arguments given to generate_technical_metadata method."""
-    if predef_file_format_version and not predef_file_format:
-        raise ValueError(
-            "Predefined file format version is given, but file format is "
-            "not."
-        )
-    if predef_checksum_algorithm and not predef_checksum:
-        raise ValueError(
-            "Predefined checksum algorithm is given, but checksum is not."
-        )
-    if predef_checksum and not predef_checksum_algorithm:
-        raise ValueError(
-            "Predefined checksum is given, but checksum algorithm is not."
-        )
 
 
 def _file_creation_date(filepath: Path) -> str:
@@ -111,7 +57,6 @@ def _create_technical_csv_metadata(
         stream: dict, filepath, has_header
 ) -> mets_builder.metadata.TechnicalImageMetadata:
     """Create technical csv metadata object from file-scraper stream."""
-    # Generate header information
     first_line = stream["first_line"]
     if has_header:
         header = first_line
@@ -240,6 +185,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """
         self.source_filepath = Path(source_filepath)
         self._technical_metadata_generated = False
+        self._has_header = None
 
         super().__init__(
             sip_filepath=sip_filepath,
@@ -271,164 +217,144 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         self._source_filepath = source_filepath
 
-    def _create_technical_file_object_metadata(
-        self,
-        scraper: Scraper,
-        stream: dict,
-        predef_file_format: Optional[str] = None,
-        predef_file_format_version: Optional[str] = None,
-        predef_checksum_algorithm: Union[
-            mets_builder.metadata.ChecksumAlgorithm, str, None
-        ] = None,
-        predef_checksum: Optional[str] = None,
-        predef_file_created_date: Optional[str] = None,
-        predef_object_identifier_type: Optional[str] = None,
-        predef_object_identifier: Optional[str] = None,
-        predef_charset: Union[mets_builder.metadata.Charset, str, None] = None,
-        predef_original_name: Optional[str] = None,
-        format_registry_name: Optional[str] = None,
-        format_registry_key: Optional[str] = None,
-        creating_application: Optional[str] = None,
-        creating_application_version: Optional[str] = None
-    ) -> mets_builder.metadata.TechnicalFileObjectMetadata:
-        """Create technical object metadata object from file-scraper scraper
-        and stream.
+    def _create_technical_characteristics(self, stream: dict) -> \
+            Optional[mets_builder.metadata.TechnicalObjectMetadata]:
+        """Generate file/stream format specific metadata.
+
+        Creates for example AudioMD for audio streams, MixMD for image
+        and VideoMD for video. Returns ``None`` if technical
+        characteristics are not required for the format.
+
+        :param stream: Individual stream metadata as returned by
+            file-scraper
         """
-        return mets_builder.metadata.TechnicalFileObjectMetadata(
-            file_format=_first(predef_file_format, scraper.mimetype),
-            file_format_version=_first(
-                predef_file_format_version, scraper.version
-            ),
-            checksum_algorithm=_first(predef_checksum_algorithm, "MD5"),
-            checksum=_first(
-                predef_checksum, scraper.checksum(algorithm="MD5")
-            ),
-            file_created_date=_first(
-                predef_file_created_date,
-                _file_creation_date(self.source_filepath)
-            ),
-            object_identifier_type=predef_object_identifier_type,
-            object_identifier=predef_object_identifier,
-            charset=_first(predef_charset, stream.get("charset", None)),
-            original_name=_first(
-                predef_original_name, self.source_filepath.name
-            ),
-            format_registry_name=format_registry_name,
-            format_registry_key=format_registry_key,
-            creating_application=creating_application,
-            creating_application_version=creating_application_version
-        )
+        if stream["mimetype"] == "text/csv":
+            return _create_technical_csv_metadata(stream,
+                                                  self.sip_filepath,
+                                                  self._has_header)
+        stream_type = stream["stream_type"]
+        if stream_type == "image":
+            return _create_technical_image_metadata(stream)
+        if stream_type == "audio":
+            return _create_technical_audio_metadata(stream)
+        if stream_type == "video":
+            return _create_technical_video_metadata(stream)
+
+        return None
 
     def generate_technical_metadata(
         self,
-        predef_file_format: Optional[str] = None,
-        predef_file_format_version: Optional[str] = None,
-        predef_checksum_algorithm: Union[
+        file_format: Optional[str] = None,
+        file_format_version: Optional[str] = None,
+        checksum_algorithm: Union[
             mets_builder.metadata.ChecksumAlgorithm, str, None
         ] = None,
-        predef_checksum: Optional[str] = None,
-        predef_file_created_date: Optional[str] = None,
-        predef_object_identifier_type: Optional[str] = None,
-        predef_object_identifier: Optional[str] = None,
-        predef_charset: Union[mets_builder.metadata.Charset, str, None] = None,
-        predef_original_name: Optional[str] = None,
+        checksum: Optional[str] = None,
+        file_created_date: Optional[str] = None,
+        object_identifier_type: Optional[str] = None,
+        object_identifier: Optional[str] = None,
+        charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        original_name: Optional[str] = None,
+        has_header: Optional[bool] = None,
+        delimiter: Optional[str] = None,
+        record_separator: Optional[str] = None,
+        quoting_character: Optional[str] = None,
         format_registry_name: Optional[str] = None,
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
         creating_application_version: Optional[str] = None,
-        has_header: bool = None,
-        predef_delimiter: Optional[str] = None,
-        predef_record_separator: Optional[str] = None,
-        predef_quoting_character: Optional[str] = None,
     ) -> None:
         """Generate technical metadata for this digital object.
 
-        CSV files are impossible to differentiate from other text files
-        with certainty using only programmatic methods. For this reason the
-        specialized method generate_technical_csv_metadata should be used
-        instead of this one when generating technical metadata for CSV files.
+        Scrapes the file found in SIPDigitalObject.source_filepath,
+        turning the scraped information into a
+        mets_builder.metadata.TechnicalFileObjectMetadata object, and
+        finally adds the metadata to this digital object.
 
-        Scrapes the file found in SIPDigitalObject.source_filepath, turning the
-        scraped information into a
-        mets_builder.metadata.TechnicalFileObjectMetadata object, and finally
-        adds the metadata to this digital object.
+        The metadata is overridden or enriched with the user-given
+        predefined values, whenever provided. It is possible, however,
+        to provide no predefined values at all and use only scraped
+        values.
 
-        The metadata is overridden or enriched with the user-given predefined
-        values, whenever provided. It is possible, however, to provide no
-        predefined values at all and use only scraped values.
+        Also file type specific technical metadata object is created and
+        added to the digital object.
 
-        For image, audio and video files also corresponding file type specific
-        technical metadata object is created and added to the digital object.
-
-        :param predef_file_format: Overrides scraped file format of the object
-            with a predefined value. Mimetype of the file, e.g. 'image/tiff'.
-            When set, predef_file_format_version has to be set as well.
-        :param predef_file_format_version: Overrides scraped file format
-            version of the object with a predefined value. Version number of
-            the file format, e.g. '1.2'. When set, predef_file_format has to be
+        :param file_format: Overrides scraped file format of the object
+            with a predefined value. Mimetype of the file, e.g.
+            'image/tiff'. When set, predef_file_format_version has to be
             set as well.
-        :param predef_checksum_algorithm: Overrides scraped checksum algorithm
-            of the object with a predefined value. The specific algorithm used
-            to construct the checksum for the digital object. If given as
-            string, the value is cast to
-            mets_builder.metadata.ChecksumAlgorithm and results in error if it
-            is not a valid checksum algorithm. The allowed values can be found
-            from ChecksumAlgorithm documentation. When set, predef_checksum has
-            to be set as well.
-        :param predef_checksum: Overrides scraped checksum of the object with a
-            predefined value. The output of the message digest algorithm. When
-            set, predef_checksum_algorithm has to be set as well.
-        :param predef_file_created_date: Overrides scraped file created date of
-            the object with a predefined value. The actual or approximate date
-            and time the object was created. The time information must be
-            expressed using either the ISO-8601 format, or its extended version
-            ISO_8601-2.
-        :param predef_object_identifier_type: Overrides generated object
-            identifier type of the object with a predefined value. Standardized
-            identifier types should be used when possible (e.g., an ISBN for
-            books). When set, predef_object_identifier has to be set as well.
-        :param predef_object_identifier: Overrides generated object identifier
-            of the object with a predefined value. File identifiers should be
-            globally unique. When set, predef_object_identifier_type has to be
-            set as well.
-        :param predef_charset: Overrides scraped charset of the object with a
-            predefined value. Character encoding of the file. If given as
-            string, the value is cast to mets_builder.metadata.Charset and
-            results in error if it is not a valid charset. The allowed values
+        :param file_format_version: Overrides scraped file format
+            version of the object with a predefined value. Version
+            number of the file format, e.g. '1.2'. When set,
+            predef_file_format has to be set as well.
+        :param checksum_algorithm: Overrides scraped checksum algorithm
+            of the object with a predefined value. The specific
+            algorithm used to construct the checksum for the digital
+            object. If given as string, the value is cast to
+            mets_builder.metadata.ChecksumAlgorithm and results in error
+            if it is not a valid checksum algorithm. The allowed values
+            can be found from ChecksumAlgorithm documentation. When set,
+            predef_checksum has to be set as well.
+        :param checksum: Overrides scraped checksum of the object with a
+            predefined value. The output of the message digest
+            algorithm. When set, predef_checksum_algorithm has to be set
+            as well.
+        :param file_created_date: Overrides scraped file created date of
+            the object with a predefined value. The actual or
+            approximate date and time the object was created. The time
+            information must be expressed using either the ISO-8601
+            format, or its extended version ISO_8601-2.
+        :param object_identifier_type: Overrides generated object
+            identifier type of the object with a predefined value.
+            Standardized identifier types should be used when possible
+            (e.g., an ISBN for books). When set,
+            predef_object_identifier has to be set as well.
+        :param object_identifier: Overrides generated object identifier
+            of the object with a predefined value. File identifiers
+            should be globally unique. When set,
+            predef_object_identifier_type has to be set as well.
+        :param charset: Overrides scraped charset of the object with a
+            predefined value. Character encoding of the file. If given
+            as string, the value is cast to
+            mets_builder.metadata.Charset and results in error if it is
+            not a valid charset. The allowed values
             can be found from Charset documentation.
-        :param predef_original_name: Overrides scraped original name of the
+        :param original_name: Overrides scraped original name of the
             object with a predefined value.
-        :param format_registry_name: Enriches generated metadata with format
-            registry name. Name identifying a format registry, if a format
-            registry is used to give further information about the file format.
-            When set, format_registry_key has to be set as well.
-        :param format_registry_key: Enriches generated metadata with format
-            registry key. The unique key used to reference an entry for this
-            file format in a format registry. When set, format_registry_name
-            has to be set as well.
-        :param creating_application: Enriches generated metadata with creating
-            application. Software that was used to create this file. When set,
-            creating_application_version has to be set as well.
-        :param creating_application_version: Enriches generated metadata with
-            creating application version. Version of the software that was
-            used to create this file. When set, creating_application has to be
-            set as well.
-        :param has_header: A boolean indicating whether this CSV file has a
-            header row or not. If set as True, the first row of the file is
-            used as header information. If set as False, the header metadata is
-            set as "header1", "header2", etc. according to the number of fields
-            in a row.
-        :param predef_delimiter: Overrides the scraped delimiter character(s)
-            with a predefined value. The character or combination of characters
-            that are used to separate fields in the CSV file.
-        :param predef_record_separator: Overrides the scraped record separator
-            character(s) with a predefined value. The character or combination
-            of characters that are used to separate records in the CSV file.
-        :param predef_quoting_character: Overrides the scraped quoting
-            character with a predefined value. The character that is used to
-            encapsulate values in the CSV file. Encapsulated values can
-            include characters that are otherwise treated in a special way,
-            such as the delimiter character.
+        :param has_header: A boolean indicating whether this CSV file
+            has a header row or not. If set as True, the first row of
+            the file is used as header information. If set as False, the
+            header metadata is set as "header1", "header2", etc.
+            according to the number of fields in a row.
+        :param delimiter: Overrides the scraped delimiter character(s)
+            with a predefined value. The character or combination of
+            characters that are used to separate fields in the CSV file.
+        :param record_separator: Overrides the scraped record separator
+            character(s) with a predefined value. The character or
+            combination of characters that are used to separate records
+            in the CSV file.
+        :param quoting_character: Overrides the scraped quoting
+            character with a predefined value. The character that is
+            used to encapsulate values in the CSV file. Encapsulated
+            values can include characters that are otherwise treated in
+            a special way, such as the delimiter character.
+        :param format_registry_name: Enriches generated metadata with
+            format registry name. Name identifying a format registry, if
+            a format registry is used to give further information about
+            the file format. When set, format_registry_key has to be set
+            as well.
+        :param format_registry_key: Enriches generated metadata with
+            format registry key. The unique key used to reference an
+            entry for this file format in a format registry. When set,
+            format_registry_name has to be set as well.
+        :param creating_application: Enriches generated metadata with
+            creating application. Software that was used to create this
+            file. When set, creating_application_version has to be set
+            as well.
+        :param creating_application_version: Enriches generated metadata
+            with creating application version. Version of the software
+            that was used to create this file. When set,
+            creating_application has to be set as well.
         """
         if self._technical_metadata_generated:
             raise MetadataGenerationError(
@@ -436,74 +362,63 @@ class SIPDigitalObject(mets_builder.DigitalObject):
                 "digital object."
             )
 
-        _generate_metadata_argument_validation(
-            predef_file_format,
-            predef_file_format_version,
-            predef_checksum_algorithm,
-            predef_checksum
-        )
+        if file_format_version and not file_format:
+            raise ValueError(
+                "Predefined file format version is given, but file format is "
+                "not."
+            )
+        if checksum_algorithm and not checksum:
+            raise ValueError(
+                "Predefined checksum algorithm is given, but checksum is not."
+            )
+        if checksum and not checksum_algorithm:
+            raise ValueError(
+                "Predefined checksum is given, but checksum algorithm is not."
+            )
+
+        if has_header is not None:
+            self._has_header = has_header
 
         scraper = Scraper(
             filename=str(self.source_filepath),
-            mimetype=predef_file_format,
-            version=predef_file_format_version,
-            charset=predef_charset,
-            has_header=has_header,
-            delimiter=predef_delimiter,
-            separator=predef_record_separator,
-            quotechar=predef_quoting_character,
+            mimetype=file_format,
+            version=file_format_version,
+            charset=charset,
+            delimiter=delimiter,
+            separator=record_separator,
+            quotechar=quoting_character,
         )
         scraper.scrape(check_wellformed=False)
 
         stream = scraper.streams[0]
 
-        container_metadata = self._create_technical_file_object_metadata(
-            scraper,
-            stream,
-            predef_file_format=predef_file_format,
-            predef_file_format_version=predef_file_format_version,
-            predef_checksum_algorithm=predef_checksum_algorithm,
-            predef_checksum=predef_checksum,
-            predef_file_created_date=predef_file_created_date,
-            predef_object_identifier_type=predef_object_identifier_type,
-            predef_object_identifier=predef_object_identifier,
-            predef_charset=predef_charset,
-            predef_original_name=predef_original_name,
+        # Create PREMIS metadata for file
+        file_metadata = mets_builder.metadata.TechnicalFileObjectMetadata(
+            file_format=scraper.mimetype,
+            file_format_version=scraper.version,
+            checksum_algorithm=checksum_algorithm or "MD5",
+            checksum=checksum or scraper.checksum(algorithm="MD5"),
+            file_created_date=file_created_date
+            or _file_creation_date(self.source_filepath),
+            object_identifier_type=object_identifier_type,
+            object_identifier=object_identifier,
+            charset=charset or stream.get("charset", None),
+            original_name=original_name or self.source_filepath.name,
             format_registry_name=format_registry_name,
             format_registry_key=format_registry_key,
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-        self.add_metadata(container_metadata)
+        self.add_metadata(file_metadata)
 
-        # Create media metadata (eg. AudioMD, MixMD, VideoMD)
-        media_metadata = _create_technical_media_metadata(stream,
-                                                          self.sip_filepath,
-                                                          has_header)
-        if media_metadata:
-            self.add_metadata(media_metadata)
+        # Create file format specific metadata (eg. AudioMD, MixMD,
+        # VideoMD)
+        characteristics = self._create_technical_characteristics(stream)
+        if characteristics:
+            self.add_metadata(characteristics)
 
-        if len(scraper.streams) > 1:
-            # Image or video container, add streams
-            self._add_streams(
-                scraper.streams, file_metadata=container_metadata
-            )
-
-        # Create digital provenance
-        if not predef_checksum:
-            self.add_checksum_calculation_event()
-
-        self._technical_metadata_generated = True
-
-    def _add_streams(
-            self,
-            streams: Iterable[dict],
-            file_metadata: mets_builder.metadata.TechnicalFileObjectMetadata
-    ) -> None:
-        """
-        Create PREMIS elements for the streams of a given file
-        """
-        for i, stream in enumerate(streams.values()):
+        # Create metadata for the streams of a given file
+        for i, stream in enumerate(scraper.streams.values()):
             if i == 0:
                 # Skip the container itself
                 continue
@@ -520,21 +435,23 @@ class SIPDigitalObject(mets_builder.DigitalObject):
                 relationship_subtype="includes"
             )
 
-            metadatas = [stream_metadata]
-
-            # Generate video/audio metadata if applicable
-            media_metadata = _create_technical_media_metadata(stream)
-            if media_metadata:
-                metadatas.append(media_metadata)
-
             # Add digital object streams
             digital_object_stream = mets_builder.DigitalObjectStream(
-                # This is a list of metadata objects, not a single metadata
-                # object
-                metadata=metadatas
+                metadata=[stream_metadata]
             )
 
+            # Generate stream format specific metadata if applicable
+            characteristics = self._create_technical_characteristics(stream)
+            if characteristics:
+                digital_object_stream.add_metadata(characteristics)
+
             self.add_stream(digital_object_stream)
+
+        # Create digital provenance
+        if not checksum:
+            self.add_checksum_calculation_event()
+
+        self._technical_metadata_generated = True
 
     def add_checksum_calculation_event(self):
         """Add checksum calculation event to a digital object."""
