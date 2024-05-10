@@ -386,10 +386,6 @@ def test_generate_metadata_with_predefined_values():
     ("invalid_init_params", "error_message"),
     (
         (
-            {"predef_file_format": "image/tiff"},
-            "Predefined file format is given, but file format version is not."
-        ),
-        (
             {"predef_file_format_version": "1.0"},
             "Predefined file format version is given, but file format is not."
         ),
@@ -452,7 +448,7 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
                 "predef_quoting_character": "'"
             },
             {
-                "header": ["year", "brand", "model", "detail", "other"],
+                "header": ["year,brand,model,detail,other"],
                 "charset": "ISO-8859-15",
                 "delimiter": ";",
                 "record_separator": "CR+LF",
@@ -472,7 +468,8 @@ def test_generating_technical_metadata_for_csv_file(
         sip_filepath="sip_data/test_csv.csv"
     )
 
-    digital_object.generate_technical_csv_metadata(
+    digital_object.generate_technical_metadata(
+        predef_file_format="text/csv",
         has_header=args.get("has_header"),
         predef_charset=args.get("predef_charset"),
         predef_delimiter=args.get("predef_delimiter"),
@@ -511,27 +508,6 @@ def test_generating_technical_metadata_for_csv_file(
     assert metadata.delimiter == correct_values["delimiter"]
     assert metadata.record_separator == correct_values["record_separator"]
     assert metadata.quoting_character == correct_values["quoting_character"]
-
-
-def test_generating_metadata_for_csv_file_with_wrong_call():
-    """Test that trying to use the generic generate_technical_metadata method
-    for generating metadata for a CSV file instead of the specialized
-    generate_technical_csv_metadata raises an error.
-    """
-    digital_object = SIPDigitalObject(
-        source_filepath="tests/data/test_csv.csv",
-        sip_filepath="sip_data/test_csv.csv"
-    )
-
-    with pytest.raises(ValueError) as error:
-        digital_object.generate_technical_metadata(
-            predef_file_format="text/csv",
-            predef_file_format_version="(:unap)"
-        )
-    assert str(error.value) == (
-        "Given predef_file_format is 'text/csv'. Use specialized method "
-        "generate_technical_csv_metadata to generate metadata for CSV files."
-    )
 
 
 def test_checksum_calculation_event():
