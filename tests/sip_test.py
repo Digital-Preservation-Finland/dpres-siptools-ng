@@ -2,9 +2,10 @@
 import hashlib
 import tarfile
 
-import pytest
 from mets_builder import METS, MetsProfile
 from mets_builder.metadata import DigitalProvenanceEventMetadata
+import lxml
+import pytest
 
 import siptools_ng.agent
 from siptools_ng.sip import SIP
@@ -71,8 +72,8 @@ def test_mets_in_sip(tmp_path, simple_sip):
     mets_filepath = extracted_filepath / "mets.xml"
     assert mets_filepath.exists()
 
-    mets_contents = mets_filepath.read_text()
-    assert mets_contents.startswith("<mets:mets")
+    mets = lxml.etree.parse(str(mets_filepath))
+    mets.getroot().tag = "{http://www.loc.gov/METS/}mets"
 
 
 def test_signature_in_sip(tmp_path, simple_sip):
