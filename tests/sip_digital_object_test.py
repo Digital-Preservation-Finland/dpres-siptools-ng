@@ -2,6 +2,7 @@
 import itertools
 from datetime import datetime
 
+from file_scraper.defaults import BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED
 import pytest
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
@@ -58,6 +59,7 @@ def test_generating_technical_metadata_for_text_file():
     )
 
     digital_object.generate_technical_metadata()
+    assert digital_object.use is None
 
     metadata = [
         data for data in digital_object.metadata
@@ -334,6 +336,33 @@ def test_generate_technical_metadata_for_video_container():
 
     assert video_metadata.codec_name == "FFV1"
     assert video_metadata.sampling == "4:2:0"
+
+
+@pytest.mark.parametrize(
+    "grade,expected_use",
+    [
+        (BIT_LEVEL, "fi-dpres-file-format-identification"),
+        (BIT_LEVEL_WITH_RECOMMENDED, "fi-dpres-no-file-format-validation")
+    ]
+)
+def test_bit_level_format(monkeypatch, grade, expected_use):
+    """Test metadata generation for bit level format file.
+
+    Use attribute should be automatically set for files that are
+    detected as bit-level formats.
+
+    :param monkeypatch: Helper to conveniently monkeypatch attributes
+    :param grade: Grade of scraped file
+    :param expected_use: Expected value of use attribute
+    """
+    monkeypatch.setattr("file_scraper.scraper.Scraper.grade", lambda _: grade)
+    digital_object = SIPDigitalObject(
+        source_filepath="tests/data/test_file.txt",
+        sip_filepath="sip_data/test_segy.sgy"
+    )
+
+    digital_object.generate_technical_metadata()
+    assert digital_object.use == expected_use
 
 
 def test_generate_metadata_with_predefined_values():

@@ -5,11 +5,18 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 import mets_builder
-from file_scraper.scraper import Scraper
+from file_scraper.scraper import Scraper, BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED
 from mets_builder.defaults import UNAV
 from mets_builder.metadata import DigitalProvenanceEventMetadata
 
 import siptools_ng.agent
+
+
+# Map scraper grades to values of USE attibute
+USE = {
+    BIT_LEVEL: "fi-dpres-file-format-identification",
+    BIT_LEVEL_WITH_RECOMMENDED: "fi-dpres-no-file-format-validation"
+}
 
 
 def _normalize_unav(value):
@@ -450,6 +457,10 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         # Create digital provenance
         if not checksum:
             self.add_checksum_calculation_event()
+
+        # If file-scraper detects the file as "bit-level file" (for
+        # example SEG-Y), set the use attribute accordingly.
+        self.use = USE.get(scraper.grade())
 
         self._technical_metadata_generated = True
 
