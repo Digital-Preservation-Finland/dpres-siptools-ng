@@ -425,7 +425,13 @@ def test_generate_metadata_with_predefined_values():
         (
             {"checksum": "12345"},
             "Predefined checksum is given, but checksum algorithm is not."
-        )
+        ),
+        (
+            {"delimiter": ","},
+            "CSV specific parameters (has_header, delimiter, record_separator,"
+            " quoting_character) can be used only with CSV files"
+
+        ),
     )
 )
 def test_invalid_generate_metadata_params(invalid_init_params, error_message):

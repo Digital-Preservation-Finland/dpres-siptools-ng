@@ -382,6 +382,13 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             raise ValueError(
                 "Predefined checksum is given, but checksum algorithm is not."
             )
+        if (has_header or delimiter or record_separator or quoting_character)\
+                and file_format != 'text/csv':
+            raise ValueError(
+                "CSV specific parameters (has_header, delimiter, "
+                "record_separator, quoting_character) can be used only "
+                "with CSV files"
+            )
 
         if has_header is not None:
             self._has_header = has_header
