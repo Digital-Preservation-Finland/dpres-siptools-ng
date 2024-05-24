@@ -1,5 +1,5 @@
 """Test digital provenance module."""
-from file_scraper import __version__ as file_scraper_version
+import file_scraper
 
 import siptools_ng.agent
 
@@ -19,6 +19,6 @@ def test_get_file_scraper_agent():
     agent = siptools_ng.agent.get_file_scraper_agent()
     assert agent.agent_name == "file-scraper"
     assert agent.agent_type.value == "software"
-    assert agent.agent_version == file_scraper_version
+    assert agent.agent_version == file_scraper.__version__
     assert agent.agent_identifier_type == "UUID"
     assert agent.agent_identifier is None

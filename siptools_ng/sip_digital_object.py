@@ -5,17 +5,20 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 import mets_builder
-from file_scraper.scraper import Scraper, BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED
+import file_scraper.scraper
 from mets_builder.defaults import UNAV
-from mets_builder.metadata import DigitalProvenanceEventMetadata
+from mets_builder.metadata import (DigitalProvenanceEventMetadata,
+                                   DigitalProvenanceAgentMetadata)
 
 import siptools_ng.agent
 
 
 # Map scraper grades to values of USE attibute
 USE = {
-    BIT_LEVEL: "fi-dpres-file-format-identification",
-    BIT_LEVEL_WITH_RECOMMENDED: "fi-dpres-no-file-format-validation"
+    file_scraper.defaults.BIT_LEVEL:
+    "fi-dpres-file-format-identification",
+    file_scraper.defaults.BIT_LEVEL_WITH_RECOMMENDED:
+    "fi-dpres-no-file-format-validation"
 }
 
 
@@ -394,7 +397,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         if csv_has_header is not None:
             self._csv_has_header = csv_has_header
 
-        scraper = Scraper(
+        scraper = file_scraper.scraper.Scraper(
             filename=str(self.source_filepath),
             mimetype=file_format,
             version=file_format_version,
@@ -462,9 +465,12 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
             self.add_stream(digital_object_stream)
 
-        # Create digital provenance
+        # Document file scraping
         if not checksum:
-            self.add_checksum_calculation_event()
+            self._add_checksum_calculation_event()
+        if not file_format:
+            self._add_format_identification_event(scraper)
+        self._add_metadata_extraction_event(scraper)
 
         # If file-scraper detects the file as "bit-level file" (for
         # example SEG-Y), set the use attribute accordingly.
@@ -472,7 +478,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         self._technical_metadata_generated = True
 
-    def add_checksum_calculation_event(self):
+    def _add_checksum_calculation_event(self):
         """Add checksum calculation event to a digital object."""
         checksum_event = DigitalProvenanceEventMetadata(
             event_type="message digest calculation",
@@ -491,3 +497,112 @@ class SIPDigitalObject(mets_builder.DigitalObject):
 
         self.add_metadata(checksum_event)
         self.add_metadata(file_scraper_agent)
+
+    def _add_metadata_extraction_event(self, scraper):
+        """Add metadata extraction event to a digital object."""
+        event = DigitalProvenanceEventMetadata(
+            event_type="metadata extraction",
+            event_detail=("Technical metadata extraction as premis metadata "
+                          "from digital objects"),
+            event_outcome="success",
+            event_outcome_detail=("Premis metadata successfully created "
+                                  "from extracted technical metadata."),
+        )
+
+        # In addition file-scraper itself, create agent metadata
+        # representing each Scraper that was used
+        scraper_infos = [
+            scraper_info for scraper_info in scraper.info.values()
+            if scraper_info['class'].endswith("Scraper")
+        ]
+        agents = [siptools_ng.agent.get_file_scraper_agent()] \
+            + _create_scraper_agents(scraper_infos)
+        for agent in agents:
+            self.add_metadata(agent)
+            event.link_agent_metadata(
+                agent_metadata=agent,
+                agent_role="executing program"
+            )
+        self.add_metadata(event)
+
+    def _add_format_identification_event(self, scraper):
+        """Add format identification event to a digital object."""
+        event = DigitalProvenanceEventMetadata(
+            event_type="format identification",
+            event_detail="MIME type and version identification",
+            event_outcome="success",
+            event_outcome_detail=("File MIME type and format version "
+                                  "successfully identified."),
+        )
+
+        # In addition file-scraper itself, create agent metadata
+        # representing each Detector that was used
+        detector_infos = [
+            scraper_info for scraper_info in scraper.info.values()
+            if scraper_info['class'].endswith("Detector")
+        ]
+        agents = [siptools_ng.agent.get_file_scraper_agent()] \
+            + _create_scraper_agents(detector_infos)
+
+        for agent in agents:
+            self.add_metadata(agent)
+            event.link_agent_metadata(
+                agent_metadata=agent,
+                agent_role="executing program"
+            )
+
+        self.add_metadata(event)
+
+    # TODO: siptools-ng currently does not validate digital objects, so
+    # this method is unused.
+    def _add_validation_event(self, scraper):
+        """Add metadata validation event to a digital object."""
+        event = DigitalProvenanceEventMetadata(
+            event_type="validation",
+            event_detail="Digital object validation",
+            event_outcome="success",
+            event_outcome_detail=("Digital object(s) evaluated as "
+                                  "well-formed and valid."),
+        )
+        # In addition file-scraper itself, create agent metadata
+        # representing each Scraper that was used
+        scraper_infos = [
+            scraper_info for scraper_info in scraper.info.values()
+            if scraper_info['class'].endswith("Scraper")
+        ]
+        agents = [siptools_ng.agent.get_file_scraper_agent()] \
+            + _create_scraper_agents(scraper_infos)
+        for agent in agents:
+            self.add_metadata(agent)
+            event.link_agent_metadata(
+                agent_metadata=agent,
+                agent_role="executing program"
+            )
+
+        self.add_metadata(event)
+
+
+def _create_scraper_agents(scraper_infos):
+    agents = []
+    for scraper_info in scraper_infos:
+        if scraper_info["tools"]:
+            tools = 'Used tools (name-version): ' \
+                + ', '.join(scraper_info['tools'])
+        else:
+            # The scraper/detector does not use any external tools
+            # TODO: It probably would not make much sense to create
+            # separate agent for this scraper/detector, as agent
+            # representing file-scraper will be created anyway. However,
+            # tools have not yet been defined for ANY scraper/detector,
+            # so it is probably better to create agent for every
+            # scraper/detector until the tools have been defined!
+            tools = None
+        agents.append(
+            DigitalProvenanceAgentMetadata(
+                agent_name=scraper_info['class'],
+                agent_type="software",
+                agent_version=file_scraper.__version__,
+                agent_note=tools
+            )
+        )
+    return agents

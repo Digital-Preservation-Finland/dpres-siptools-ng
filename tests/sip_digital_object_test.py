@@ -2,7 +2,7 @@
 import itertools
 from datetime import datetime
 
-from file_scraper.defaults import BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED
+import file_scraper
 import pytest
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
@@ -13,7 +13,6 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    TechnicalBitstreamObjectMetadata,
                                    TechnicalVideoMetadata)
 
-from siptools_ng.agent import get_file_scraper_agent
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
                                             SIPDigitalObject)
 
@@ -341,8 +340,10 @@ def test_generate_technical_metadata_for_video_container():
 @pytest.mark.parametrize(
     "grade,expected_use",
     [
-        (BIT_LEVEL, "fi-dpres-file-format-identification"),
-        (BIT_LEVEL_WITH_RECOMMENDED, "fi-dpres-no-file-format-validation")
+        (file_scraper.defaults.BIT_LEVEL,
+         "fi-dpres-file-format-identification"),
+        (file_scraper.defaults.BIT_LEVEL_WITH_RECOMMENDED,
+         "fi-dpres-no-file-format-validation")
     ]
 )
 def test_bit_level_format(monkeypatch, grade, expected_use):
@@ -389,8 +390,10 @@ def test_generate_metadata_with_predefined_values():
         creating_application_version="predefined_creating_application_version"
     )
 
-    assert len(digital_object.metadata) == 1
-    metadata = digital_object.metadata.pop()
+    metadata = [
+        data for data in digital_object.metadata
+        if isinstance(data, TechnicalFileObjectMetadata)
+    ][0]
 
     assert metadata.file_format == "predefined_file_format"
     assert metadata.file_format_version == "predefined_file_format_version"
@@ -538,9 +541,43 @@ def test_generating_technical_metadata_for_csv_file(
     assert metadata.quoting_character == correct_values["quoting_character"]
 
 
-def test_checksum_calculation_event():
-    """Test that when checksum is calculated for a digital object, event
-    metadata is created.
+@pytest.mark.parametrize(
+    "event_type,event_detail,event_outcome_detail,expected_linked_agents",
+    [
+        (
+            "message digest calculation",
+            "Checksum calculation for digital objects",
+            "Checksum successfully calculated for digital objects.",
+            {"file-scraper"}
+        ),
+        (
+            "metadata extraction",
+            "Technical metadata extraction as premis metadata from "
+            "digital objects",
+            "Premis metadata successfully created from extracted technical "
+            "metadata.",
+            {"MagicTextScraper", "MimeMatchScraper", "ResultsMergeScraper",
+             "TextEncodingMetaScraper", "TextfileScraper", "file-scraper"}
+        ),
+        (
+            "format identification",
+            "MIME type and version identification",
+            "File MIME type and format version successfully identified.",
+            {"FidoDetector", "MagicDetector", "ODFDetector",
+             "PredefinedDetector", "SegYDetector", "SiardDetector",
+             "file-scraper"}
+        ),
+    ]
+)
+def test_event(event_type, event_detail, event_outcome_detail,
+               expected_linked_agents):
+    """Test that premis event metadata is created.
+
+    :param event_type: Event type
+    :param event_detail: Expected event detail
+    :param event_event_outcome_detail: Expected event outcome detail
+    :param expected_linked_agents: Names of agents that should be linked
+        to event
     """
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
@@ -548,54 +585,78 @@ def test_checksum_calculation_event():
     )
     digital_object.generate_technical_metadata()
 
-    checksum_event = next(
+    event = next(
         metadata for metadata in digital_object.metadata
         if (
             isinstance(metadata, DigitalProvenanceEventMetadata)
-            and metadata.event_type == "message digest calculation"
+            and metadata.event_type == event_type
         )
     )
-    assert checksum_event.event_type == "message digest calculation"
-    assert checksum_event.event_detail == (
-        "Checksum calculation for digital objects"
-    )
-    assert checksum_event.event_outcome.value == "success"
-    assert checksum_event.event_outcome_detail == (
-        "Checksum successfully calculated for digital objects."
-    )
-    assert checksum_event.event_identifier_type == "UUID"
-    assert checksum_event.event_identifier is None
+    assert event.event_detail == event_detail
+    assert event.event_outcome.value == "success"
+    assert event.event_outcome_detail == event_outcome_detail
+    assert event.event_identifier_type == "UUID"
+    assert event.event_identifier is None
 
-    agent = next(
-        metadata for metadata in digital_object.metadata
+    # Expected agents should be linked to event
+    linked_agents = {linked_agent.agent_metadata
+                     for linked_agent in event.linked_agents}
+    assert {agent.agent_name for agent in linked_agents} \
+        == expected_linked_agents
+
+    for agent in linked_agents:
+        assert agent.agent_type.value == "software"
+        assert agent.agent_version == file_scraper.__version__
+        assert agent.agent_identifier_type == "UUID"
+        assert agent.agent_identifier is None
+        # TODO: currently agent_note is None for all scrapers/detectors,
+        # because tools have not been defined in file-scraper!
+        #
+        # assert agent.agent_note.startswith('Used tools (name-version): ')
+
+    # Expected agent metadata should have been added also to
+    # digital_object
+    assert expected_linked_agents <= {
+        metadata.agent_name for metadata in digital_object.metadata
         if isinstance(metadata, DigitalProvenanceAgentMetadata)
-    )
-    assert agent == get_file_scraper_agent()
+    }
 
-    linked_agents = [
-        linked_agent.agent_metadata
-        for linked_agent in checksum_event.linked_agents
+
+@pytest.mark.parametrize(
+    "kwargs,expected_event_types",
+    [
+        # No arguments, all events should be created
+        (
+            {},
+            {"metadata extraction", "format identification",
+             "message digest calculation"}
+        ),
+        # Checksum is predefined, so it should not be calculated
+        (
+            {"checksum": "1234", "checksum_algorithm": "MD5"},
+            {"metadata extraction", "format identification"}
+        ),
+        # File format is predefined, so it should not be identified
+        (
+            {"file_format": "text/plain"},
+            {"metadata extraction", "message digest calculation"}
+        )
+
     ]
-    assert linked_agents == [get_file_scraper_agent()]
+)
+def test_skip_event(kwargs, expected_event_types):
+    """Test that unnecessary events are not created.
 
-
-def test_skip_checksum_calculation_event():
-    """Test that when predefined checksum is given for digital object, no
-    checksum calculation event is linked to the digital object.
+    :param kwargs: Arguments for metadata generation
+    :param expected_event_types: Types of events that should be created
     """
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
-    digital_object.generate_technical_metadata(
-        checksum_algorithm="MD5",
-        checksum="d8e8fca2dc0f896fd7cb4cb0031ba249"
-    )
-    checksum_events = [
-        metadata for metadata in digital_object.metadata
-        if (
-            isinstance(metadata, DigitalProvenanceEventMetadata)
-            and metadata.event_type == "message digest calculation"
-        )
-    ]
-    assert not checksum_events
+    digital_object.generate_technical_metadata(**kwargs)
+    event_types = {
+        metadata.event_type for metadata in digital_object.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+    }
+    assert event_types == expected_event_types
