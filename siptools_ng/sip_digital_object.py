@@ -192,7 +192,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """
         self.source_filepath = Path(source_filepath)
         self._technical_metadata_generated = False
-        self._has_header = None
+        self._csv_has_header = None
 
         super().__init__(
             sip_filepath=sip_filepath,
@@ -238,7 +238,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         if stream["mimetype"] == "text/csv":
             return _create_technical_csv_metadata(stream,
                                                   self.sip_filepath,
-                                                  self._has_header)
+                                                  self._csv_has_header)
         stream_type = stream["stream_type"]
         if stream_type == "image":
             return _create_technical_image_metadata(stream)
@@ -262,10 +262,10 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         object_identifier: Optional[str] = None,
         charset: Union[mets_builder.metadata.Charset, str, None] = None,
         original_name: Optional[str] = None,
-        has_header: Optional[bool] = None,
-        delimiter: Optional[str] = None,
-        record_separator: Optional[str] = None,
-        quoting_character: Optional[str] = None,
+        csv_has_header: Optional[bool] = None,
+        csv_delimiter: Optional[str] = None,
+        csv_record_separator: Optional[str] = None,
+        csv_quoting_character: Optional[str] = None,
         format_registry_name: Optional[str] = None,
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
@@ -328,19 +328,20 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             can be found from Charset documentation.
         :param original_name: Overrides scraped original name of the
             object with a predefined value.
-        :param has_header: A boolean indicating whether this CSV file
-            has a header row or not. If set as True, the first row of
-            the file is used as header information. If set as False, the
-            header metadata is set as "header1", "header2", etc.
+        :param csv_has_header: A boolean indicating whether this CSV
+            file has a header row or not. If set as True, the first row
+            of the file is used as header information. If set as False,
+            the header metadata is set as "header1", "header2", etc.
             according to the number of fields in a row.
-        :param delimiter: Overrides the scraped delimiter character(s)
-            with a predefined value. The character or combination of
-            characters that are used to separate fields in the CSV file.
-        :param record_separator: Overrides the scraped record separator
+        :param csv_delimiter: Overrides the scraped delimiter
             character(s) with a predefined value. The character or
-            combination of characters that are used to separate records
+            combination of characters that are used to separate fields
             in the CSV file.
-        :param quoting_character: Overrides the scraped quoting
+        :param csv_record_separator: Overrides the scraped record
+            separator character(s) with a predefined value. The
+            character or combination of characters that are used to
+            separate records in the CSV file.
+        :param csv_quoting_character: Overrides the scraped quoting
             character with a predefined value. The character that is
             used to encapsulate values in the CSV file. Encapsulated
             values can include characters that are otherwise treated in
@@ -382,25 +383,25 @@ class SIPDigitalObject(mets_builder.DigitalObject):
             raise ValueError(
                 "Predefined checksum is given, but checksum algorithm is not."
             )
-        if (has_header or delimiter or record_separator or quoting_character)\
-                and file_format != 'text/csv':
+        if (csv_has_header or csv_delimiter or csv_record_separator
+                or csv_quoting_character) and file_format != 'text/csv':
             raise ValueError(
-                "CSV specific parameters (has_header, delimiter, "
-                "record_separator, quoting_character) can be used only "
-                "with CSV files"
+                "CSV specific parameters (csv_has_header, csv_delimiter, "
+                "csv_record_separator, csv_quoting_character) can be "
+                "used only with CSV files"
             )
 
-        if has_header is not None:
-            self._has_header = has_header
+        if csv_has_header is not None:
+            self._csv_has_header = csv_has_header
 
         scraper = Scraper(
             filename=str(self.source_filepath),
             mimetype=file_format,
             version=file_format_version,
             charset=charset,
-            delimiter=delimiter,
-            separator=record_separator,
-            quotechar=quoting_character,
+            delimiter=csv_delimiter,
+            separator=csv_record_separator,
+            quotechar=csv_quoting_character,
         )
         scraper.scrape(check_wellformed=False)
 

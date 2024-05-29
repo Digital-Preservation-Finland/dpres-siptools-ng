@@ -427,10 +427,10 @@ def test_generate_metadata_with_predefined_values():
             "Predefined checksum is given, but checksum algorithm is not."
         ),
         (
-            {"delimiter": ","},
-            "CSV specific parameters (has_header, delimiter, record_separator,"
-            " quoting_character) can be used only with CSV files"
-
+            {"csv_delimiter": ","},
+            "CSV specific parameters (csv_has_header, csv_delimiter, "
+            "csv_record_separator, csv_quoting_character) can be used "
+            "only with CSV files"
         ),
     )
 )
@@ -451,7 +451,7 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
     (
         # Detects header when header row is declared to exist
         (
-            {"has_header": True},
+            {"csv_has_header": True},
             {
                 "header": ["year", "brand", "model", "detail", "other"],
                 "charset": "UTF-8",
@@ -462,7 +462,7 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
         ),
         # Generates header when header row is declared not to exist
         (
-            {"has_header": False},
+            {"csv_has_header": False},
             {
                 "header": [
                     "header1", "header2", "header3", "header4", "header5"
@@ -476,11 +476,11 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
         # Uses predefined values to override scraped values
         (
             {
-                "has_header": True,
-                "predef_charset": "ISO-8859-15",
-                "predef_delimiter": ";",
-                "predef_record_separator": "CR+LF",
-                "predef_quoting_character": "'"
+                "csv_has_header": True,
+                "charset": "ISO-8859-15",
+                "csv_delimiter": ";",
+                "csv_record_separator": "CR+LF",
+                "csv_quoting_character": "'"
             },
             {
                 "header": ["year,brand,model,detail,other"],
@@ -503,14 +503,7 @@ def test_generating_technical_metadata_for_csv_file(
         sip_filepath="sip_data/test_csv.csv"
     )
 
-    digital_object.generate_technical_metadata(
-        file_format="text/csv",
-        has_header=args.get("has_header"),
-        charset=args.get("predef_charset"),
-        delimiter=args.get("predef_delimiter"),
-        record_separator=args.get("predef_record_separator"),
-        quoting_character=args.get("predef_quoting_character")
-    )
+    digital_object.generate_technical_metadata(file_format="text/csv", **args)
 
     # Technical object metadata
     metadata = [
