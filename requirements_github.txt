@@ -1,7 +1,7 @@
 # Code dependencies
-https://github.com/Digital-Preservation-Finland/dpres-mets-builder.git
-https://github.com/Digital-Preservation-Finland/dpres-signature.git
-https://github.com/Digital-Preservation-Finland/file-scraper.git
+git+https://github.com/Digital-Preservation-Finland/dpres-mets-builder.git
+git+https://github.com/Digital-Preservation-Finland/dpres-signature.git
+git+https://github.com/Digital-Preservation-Finland/file-scraper.git
 
 # TODO: These can be dropped when we move to newer pip
 # mets_builder transitive dependencies
