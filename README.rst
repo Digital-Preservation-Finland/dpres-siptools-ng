@@ -82,7 +82,7 @@ Installation using Python Virtualenv for development purposes
 -------------------------------------------------------------
 
 You can install the application inside a virtualenv using the following
-instructions.
+instructions. This might require installing some C build tools.
 
 
 Create a virtual environment::
