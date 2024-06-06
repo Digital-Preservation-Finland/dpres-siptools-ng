@@ -502,10 +502,10 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         """Add metadata extraction event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="metadata extraction",
-            event_detail=("Technical metadata extraction as premis metadata "
+            event_detail=("Technical metadata extraction as PREMIS metadata "
                           "from digital objects"),
             event_outcome="success",
-            event_outcome_detail=("Premis metadata successfully created "
+            event_outcome_detail=("PREMIS metadata successfully created "
                                   "from extracted technical metadata."),
         )
 

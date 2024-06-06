@@ -552,9 +552,9 @@ def test_generating_technical_metadata_for_csv_file(
         ),
         (
             "metadata extraction",
-            "Technical metadata extraction as premis metadata from "
+            "Technical metadata extraction as PREMIS metadata from "
             "digital objects",
-            "Premis metadata successfully created from extracted technical "
+            "PREMIS metadata successfully created from extracted technical "
             "metadata.",
             {"MagicTextScraper", "MimeMatchScraper", "ResultsMergeScraper",
              "TextEncodingMetaScraper", "TextfileScraper", "file-scraper"}
@@ -571,7 +571,7 @@ def test_generating_technical_metadata_for_csv_file(
 )
 def test_event(event_type, event_detail, event_outcome_detail,
                expected_linked_agents):
-    """Test that premis event metadata is created.
+    """Test that PREMIS event metadata is created.
 
     :param event_type: Event type
     :param event_detail: Expected event detail
