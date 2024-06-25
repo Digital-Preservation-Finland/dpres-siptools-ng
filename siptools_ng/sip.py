@@ -1,11 +1,16 @@
 """Module for Submission Information Package (SIP) handling."""
 import tarfile
 import tempfile
-from pathlib import Path
-from typing import Union
+from collections import defaultdict
+from pathlib import Path, PurePath
+from typing import Union, Iterable, Optional
 
 import dpres_signature.signature
 import mets_builder
+from mets_builder.digital_object import DigitalObject
+from mets_builder.structural_map import StructuralMap, StructuralMapDiv
+from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
+                                   DigitalProvenanceEventMetadata)
 
 import siptools_ng.agent
 from siptools_ng.sip_digital_object import SIPDigitalObject
@@ -175,7 +180,7 @@ class SIP:
         for digital_object in digital_objects:
             digital_object.generate_technical_metadata()
 
-        structural_map = mets_builder.StructuralMap.from_directory_structure(
+        structural_map = structural_map_from_directory_structure(
             digital_objects=digital_objects,
             additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
         )
@@ -184,3 +189,153 @@ class SIP:
         mets.generate_file_references()
 
         return SIP(mets=mets)
+
+
+def structural_map_from_directory_structure(
+    digital_objects: Iterable[DigitalObject],
+    additional_agents:
+        Optional[Iterable[DigitalProvenanceAgentMetadata]] = None
+) -> StructuralMap:
+    """Generate a structural map according to the directory structure of the
+    digital objects.
+
+    Returns a StructuralMap instance with StructuralMapDivs generated and
+    DigitalObjects added to the generated StructuralMapDivs according to
+    the directory structure as inferred from the sip_filepath attributes of
+    the given digital objects.
+
+    The div types will be set to be the same as the corresponding directory
+    name. The entire div tree will be placed into a wrapping div with type
+    "directory".
+
+    For example, if three digital objects are given, and their respective
+    sip_filepath attributes are:
+    - "data/directory_1/file_1.txt"
+    - "data/directory_1/file_2.txt"
+    - "data/directory_2/file_3.txt"
+
+    Then this method will create a structural map with:
+    - root div with type "directory"
+    - div with type "data" inside the root div
+    - div with type "directory_1", added to the "data" div
+    - div with type "directory_2", added to the "data" div
+    - the DigitalObjects representing "file_1.txt" and "file_2.txt" added
+      to the "directory_1" div
+    - the DigitalObject representing "file_3.txt" added to the
+      "directory_2" div
+
+    The structural map generation process is also documented as digital
+    provenance metadata (event and the executing agent) that are added to
+    the root div of the generated structural map. The event type is
+    'creation' and the agent linked to the event as the executing program
+    is dpres-mets-builder.
+
+    :param digital_objects: The DigitalObject instances that are used to
+        generate the structural map
+    :param additional_agents: Digital provenance agent metadata to be added
+        as additional executing programs for the structural map creation
+        event. These agents will be added alongside dpres-mets-builder as
+        executing programs for the event, and as metadata for the root
+        div of the structural map. This parameter can be used to document
+        the involvement of other programs that call this method to create
+        the structural map.
+
+    :raises: ValueError if 'digital_objects' is empty.
+
+    :returns: A StructuralMap instance structured according to the
+        directory structure inferred from the given digital objects
+    """
+    if not digital_objects:
+        raise ValueError(
+            "Given 'digital_objects' is empty. Structural map can not be "
+            "generated with zero digital objects."
+        )
+
+    structural_map = StructuralMap(StructuralMapDiv(div_type="directory"),
+                                   structural_map_type='PHYSICAL')
+
+    # dict directory filepath -> corresponding div
+    # In the algorithm below, PurePath(".") can be thought of as the root
+    # div that has already been created, initialize the dict with that
+    path2div = {PurePath("."): structural_map.root_div}
+
+    # dict directory filepath -> child directory filepaths
+    directory_relationships = defaultdict(set)
+
+    for digital_object in digital_objects:
+
+        sip_filepath = PurePath(digital_object.sip_filepath)
+
+        for path in sip_filepath.parents:
+            # Do not process path "."
+            if path == PurePath("."):
+                continue
+
+            # Create corresponding div for directories if they do not exist
+            # yet
+            if path not in path2div:
+                path2div[path] = StructuralMapDiv(div_type=path.name)
+
+            # Save directory relationships to be dealt with later
+            directory_relationships[path.parent].add(path)
+
+        # Add the digital object to the div corresponding its parent
+        # directory
+        digital_object_parent_div = path2div[sip_filepath.parent]
+        digital_object_parent_div.add_digital_objects([digital_object])
+
+    # Nest divs according to the directory structure
+    for parent_dir, child_dirs in directory_relationships.items():
+        parent_div = path2div[parent_dir]
+        child_divs = {path2div[directory] for directory in child_dirs}
+        parent_div.add_divs(child_divs)
+
+    # Document the process as digital provenance metadata
+    _add_digital_provenance_for_structural_map_creation(
+        structural_map, additional_agents
+    )
+
+    return structural_map
+
+
+def _add_digital_provenance_for_structural_map_creation(
+    structural_map,
+    additional_agents=None
+):
+    """Creates digital provenance metadata for structural map creation.
+
+    Creates an event for structural map creation, an agent representing
+    dpres-mets-builder, and links the agent as an agent for the event. Also
+    adds the event and agent as metadata for the root div.
+
+    :param root_div: The root div of the structural map in question
+    :param additional_agents: Optional agents to be linked to the event
+        additionally to the dpres-mets-builder agent, and added as metadata to
+        the root_div
+    """
+    if additional_agents is None:
+        additional_agents = []
+
+    event = DigitalProvenanceEventMetadata(
+        event_type="creation",
+        event_detail=(
+            "Creation of structural metadata with the "
+            "StructuralMap.from_directory_structure method"
+        ),
+        event_outcome="success",
+        event_outcome_detail=(
+            f"Created METS structural map with type "
+            f"'{structural_map.structural_map_type}'"
+        )
+    )
+    mets_builder_agent = \
+        DigitalProvenanceAgentMetadata.get_mets_builder_agent()
+
+    for agent in [mets_builder_agent] + additional_agents:
+        event.link_agent_metadata(
+            agent_metadata=agent,
+            agent_role="executing program"
+        )
+
+    for metadata in [event, mets_builder_agent] + additional_agents:
+        structural_map.root_div.add_metadata(metadata)

@@ -1,14 +1,16 @@
 """Test SIPs."""
 import hashlib
 import tarfile
-
-from mets_builder import METS, MetsProfile
-from mets_builder.metadata import DigitalProvenanceEventMetadata
 import lxml
 import pytest
 
 import siptools_ng.agent
-from siptools_ng.sip import SIP
+
+from siptools_ng.sip import SIP, structural_map_from_directory_structure
+from mets_builder import METS, MetsProfile
+from mets_builder.digital_object import DigitalObject
+from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
+                                   DigitalProvenanceEventMetadata)
 
 
 def _extract_sip(sip_filepath, extract_filepath):
@@ -156,3 +158,147 @@ def test_generated_sip_digital_provenance(simple_mets):
     siptools_ng_agent = siptools_ng.agent.get_siptools_ng_agent()
     assert siptools_ng_agent in root_div.metadata
     assert siptools_ng_agent in linked_agents
+
+
+def test_generating_structural_map_from_directory():
+    """Test generating structural map from directory contents.
+
+    There should be a div for each directory, and the divs should be nested
+    according to the directory structure. The type of each div should be the
+    corresponding directory name. The file is not represented with a div, but
+    as a DigitalObject stored in the correct div.
+
+    The root div should be an additional wrapping div with type 'directory'.
+    """
+    do1 = DigitalObject(sip_filepath="data/a/file1.txt")
+    do2 = DigitalObject(sip_filepath="data/a/file2.txt")
+    do3 = DigitalObject(sip_filepath="data/b/deep/directory/chain/file3.txt")
+    digital_objects = (do1, do2, do3)
+
+    structural_map = structural_map_from_directory_structure(digital_objects)
+
+    assert structural_map.structural_map_type == 'PHYSICAL'
+
+    # defined directory structure is wrapped in a root div with type
+    # "directory"
+    root_div = structural_map.root_div
+    assert root_div.div_type == "directory"
+    assert len(root_div.divs) == 1
+
+    # root of the user defined tree is a directory called "data", containing
+    # two other directories
+    data_div = root_div.divs.pop()
+    assert data_div.div_type == "data"
+    assert len(data_div.divs) == 2
+
+    # directory "a" in "data" contains digital objects 1 and 2
+    a_div = next(div for div in data_div if div.div_type == "a")
+    assert a_div.digital_objects == {do1, do2}
+
+    # directory "b" in "data" has a deep directory structure, at the bottom of
+    # which is digital object 3
+    b_div = next(div for div in data_div if div.div_type == "b")
+    deep_div = b_div.divs.pop()
+    assert deep_div.div_type == "deep"
+    directory_div = deep_div.divs.pop()
+    assert directory_div.div_type == "directory"
+    chain_div = directory_div.divs.pop()
+    assert chain_div.div_type == "chain"
+    assert chain_div.digital_objects == {do3}
+
+
+def test_generating_structural_map_with_no_digital_objects():
+    """Test that generating structural map with zero digital objects raises an
+    error.
+    """
+    with pytest.raises(ValueError) as error:
+        structural_map_from_directory_structure([])
+    assert str(error.value) == (
+        "Given 'digital_objects' is empty. Structural map can not be "
+        "generated with zero digital objects."
+    )
+
+
+def test_generating_structural_map_digital_provenance():
+    """Test that digital provenance metadata is created correctly when
+    structural map is generated.
+
+    Event (structmap generation) and agent (dpres-mets-builder) should have
+    been added to the root div of the generated structural map. The agent
+    should also be linked to the event as the executing program.
+    """
+    digital_object = DigitalObject(sip_filepath="data/file.txt")
+    structural_map = structural_map_from_directory_structure([digital_object])
+
+    root_div = structural_map.root_div
+    assert len(root_div.metadata) == 2
+
+    # Event
+    event = next(
+        metadata for metadata in root_div.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+    )
+    assert event.event_type == "creation"
+    assert event.event_detail == (
+        "Creation of structural metadata with the "
+        "StructuralMap.from_directory_structure method"
+    )
+    assert event.event_outcome.value == "success"
+    assert event.event_outcome_detail == (
+        "Created METS structural map with type 'PHYSICAL'"
+    )
+    assert event.event_identifier_type == "UUID"
+    assert event.event_identifier is None
+    assert event.event_datetime is None
+
+    # Agent
+    assert len(event.linked_agents) == 1
+    linked_agent = event.linked_agents[0]
+    assert linked_agent.agent_role == "executing program"
+    assert linked_agent.agent_metadata.agent_name == "dpres-mets-builder"
+
+    agent_in_div = next(
+        metadata for metadata in root_div.metadata
+        if isinstance(metadata, DigitalProvenanceAgentMetadata)
+    )
+    assert agent_in_div == linked_agent.agent_metadata
+
+
+def test_generating_structural_map_digital_provenance_with_custom_agents():
+    """Test that custom agents can be added to generated structural map.
+
+    The agents should have been added to the root div of the generated
+    structural map. The agents should also be linked to the structmap creation
+    event as executing programs.
+    """
+    digital_object = DigitalObject(sip_filepath="data/file.txt")
+    custom_agent_1 = DigitalProvenanceAgentMetadata(
+        agent_name="custom_agent_1",
+        agent_version="1.0",
+        agent_type="software"
+    )
+    custom_agent_2 = DigitalProvenanceAgentMetadata(
+        agent_name="custom_agent_2",
+        agent_version="1.0",
+        agent_type="software"
+    )
+
+    structural_map = structural_map_from_directory_structure(
+        [digital_object],
+        additional_agents=[custom_agent_1, custom_agent_2]
+    )
+
+    root_div = structural_map.root_div
+    mets_builder = DigitalProvenanceAgentMetadata.get_mets_builder_agent()
+    assert mets_builder in root_div.metadata
+    assert custom_agent_1 in root_div.metadata
+    assert custom_agent_2 in root_div.metadata
+
+    event = next(
+        metadata for metadata in root_div.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+    )
+    linked_agents = (agent.agent_metadata for agent in event.linked_agents)
+    assert mets_builder in linked_agents
+    assert custom_agent_1 in linked_agents
+    assert custom_agent_2 in linked_agents
