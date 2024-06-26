@@ -10,7 +10,9 @@ import mets_builder
 from mets_builder.digital_object import DigitalObject
 from mets_builder.structural_map import StructuralMap, StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
-                                   DigitalProvenanceEventMetadata)
+                                   DigitalProvenanceEventMetadata,
+                                   MetadataBase,
+                                   ImportedMetadata)
 
 import siptools_ng.agent
 from siptools_ng.sip_digital_object import SIPDigitalObject
@@ -338,4 +340,31 @@ def _add_digital_provenance_for_structural_map_creation(
         )
 
     for metadata in [event, mets_builder_agent] + additional_agents:
-        structural_map.root_div.add_metadata(metadata)
+        _add_metadata(structural_map.root_div, metadata)
+
+
+def _add_metadata(div: StructuralMapDiv,
+                  metadata: MetadataBase):
+    """Add metadata to a given div.
+
+    The metadata should apply to all digital objects under this div (as
+    well as digital objects under the divs nested in this div)
+
+    If metadata is imported metadata, also an event that describes
+    the import process is added to div.
+
+    :param div: The div that the metadata object is added to.
+
+    :param metadata: The metadata object that is added.
+    """
+    if isinstance(metadata, ImportedMetadata):
+        event = DigitalProvenanceEventMetadata(
+            event_type="metadata extraction",
+            event_detail=("Descriptive metadata import from external"
+                          " source"),
+            event_outcome="success",
+            event_outcome_detail=("Descriptive metadata imported to "
+                                  "mets dmdSec from external source")
+        )
+        div.metadata.add(event)
+    div.metadata.add(metadata)

@@ -6,11 +6,16 @@ import pytest
 
 import siptools_ng.agent
 
-from siptools_ng.sip import SIP, structural_map_from_directory_structure
+from siptools_ng.sip import (SIP,
+                             structural_map_from_directory_structure,
+                             _add_metadata)
 from mets_builder import METS, MetsProfile
 from mets_builder.digital_object import DigitalObject
+from mets_builder.structural_map import StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
-                                   DigitalProvenanceEventMetadata)
+                                   DigitalProvenanceEventMetadata,
+                                   ImportedMetadata, MetadataBase,
+                                   MetadataFormat, MetadataType)
 
 
 def _extract_sip(sip_filepath, extract_filepath):
@@ -302,3 +307,47 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     assert mets_builder in linked_agents
     assert custom_agent_1 in linked_agents
     assert custom_agent_2 in linked_agents
+
+
+def test_add_metadata_to_div():
+    """Test adding metadata to a structural map division."""
+    div = StructuralMapDiv(div_type="test_type")
+    assert div.metadata == set()
+
+    metadata = MetadataBase(
+        metadata_type=MetadataType.DESCRIPTIVE,
+        metadata_format=MetadataFormat.OTHER,
+        other_format="PAS-special",
+        format_version="1.0",
+    )
+    _add_metadata(div, metadata)
+    assert div.metadata == {metadata}
+
+
+def test_add_imported_metadata_to_div():
+    """Test adding imported metadata to a structural map division.
+
+    Metadata import event should be added to div.
+    """
+    div = StructuralMapDiv(div_type="test_type")
+    assert div.metadata == set()
+
+    metadata = ImportedMetadata(
+        metadata_type=MetadataType.DESCRIPTIVE,
+        metadata_format=MetadataFormat.OTHER,
+        other_format="PAS-special",
+        format_version="1.0",
+        data_path="tests/data/imported_metadata.xml"
+    )
+    _add_metadata(div, metadata)
+    # In addtition to the added metadata, the div should contain event metadata
+    assert len(div.metadata) == 2
+    assert metadata in div.metadata
+    event_metadata = (div.metadata - {metadata}).pop()
+    assert event_metadata.event_type == 'metadata extraction'
+    assert event_metadata.event_datetime is None
+    assert event_metadata.event_detail \
+        == "Descriptive metadata import from external source"
+    assert event_metadata.event_outcome.value == "success"
+    assert event_metadata.event_outcome_detail\
+        == "Descriptive metadata imported to mets dmdSec from external source"
