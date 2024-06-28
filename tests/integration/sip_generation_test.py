@@ -54,7 +54,7 @@ def test_file_location_in_sip(tmp_path):
     mets.add_structural_map(structural_map)
     mets.generate_file_references()
 
-    sip = SIP(mets=mets)
+    sip = SIP(mets=mets, digital_objects=digital_objects)
     sip.finalize(
         output_filepath=output_filepath,
         sign_key_filepath="tests/data/rsa-keys.crt"

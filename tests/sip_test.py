@@ -41,7 +41,7 @@ def test_creating_sip_with_zero_files():
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    sip = SIP(mets=mets)
+    sip = SIP(mets=mets, digital_objects=[])
 
     with pytest.raises(ValueError) as error:
         sip.finalize(
@@ -49,6 +49,18 @@ def test_creating_sip_with_zero_files():
             sign_key_filepath="tests/data/rsa-keys.crt"
         )
     assert str(error.value) == "SIP does not contain any digital objects."
+    assert len(sip.mets.structural_maps) == 0
+
+
+def test_default_structural_map(simple_mets, digital_objects):
+    """Test that the default structural map is generated."""
+    sip = SIP(mets=simple_mets, digital_objects=digital_objects)
+    assert len(sip.mets.structural_maps) == 1
+
+
+def test_simple_sip(simple_sip):
+    """Test that simple sip has the default structural map."""
+    assert len(simple_sip.mets.structural_maps) == 2
 
 
 def test_creating_sip_to_existing_filepath(simple_sip):

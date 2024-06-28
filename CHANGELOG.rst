@@ -11,6 +11,7 @@ Added
 ^^^^^
 - Automatic creation of PREMIS events when adding imported metadata to structural map
 - Ability to create structural maps from directory structures
+- Create a structural map automatically from directory structure when creating SIPs
 
 0.1.0 - 2024-03-27
 ------------------

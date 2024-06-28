@@ -11,8 +11,7 @@ from mets_builder.digital_object import DigitalObject
 from mets_builder.structural_map import StructuralMap, StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   MetadataBase,
-                                   ImportedMetadata)
+                                   MetadataBase, ImportedMetadata)
 
 import siptools_ng.agent
 from siptools_ng.sip_digital_object import SIPDigitalObject
@@ -24,12 +23,18 @@ SIGNATURE_FILENAME = "signature.sig"
 class SIP:
     """Class for Submission Information Package (SIP) handling."""
 
-    def __init__(self, mets: mets_builder.METS) -> None:
+    def __init__(
+            self,
+            digital_objects: Iterable[DigitalObject],
+            mets: mets_builder.METS
+    ) -> None:
         """Constructor for SIP class.
 
         :param mets: METS object representing the METS file of this SIP.
+        :param digital_objects: Digital objects to be included.
         """
         self.mets = mets
+        self._add_default_structural_map(digital_objects)
 
     def finalize(
         self,
@@ -137,6 +142,18 @@ class SIP:
 
         tmp_sip_filepath.rename(output_filepath)
 
+    def _add_default_structural_map(self, digital_objects) -> None:
+        """Automatically generates a default structural map based on the
+        directory structure.
+        """
+        if len(digital_objects) > 0:
+            structural_map = structural_map_from_directory_structure(
+                digital_objects=digital_objects,
+                additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
+            )
+            self.mets.add_structural_map(structural_map)
+            self.mets.generate_file_references()
+
     @classmethod
     def from_directory(
         cls,
@@ -182,15 +199,7 @@ class SIP:
         for digital_object in digital_objects:
             digital_object.generate_technical_metadata()
 
-        structural_map = structural_map_from_directory_structure(
-            digital_objects=digital_objects,
-            additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
-        )
-
-        mets.add_structural_map(structural_map)
-        mets.generate_file_references()
-
-        return SIP(mets=mets)
+        return SIP(mets=mets, digital_objects=digital_objects)
 
 
 def structural_map_from_directory_structure(

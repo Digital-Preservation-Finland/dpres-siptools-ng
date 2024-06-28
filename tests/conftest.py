@@ -33,7 +33,7 @@ def simple_mets():
 
 
 @pytest.fixture
-def simple_sip(simple_mets):
+def simple_sip(simple_mets, digital_objects):
     """A fixture for preparing a simple SIP object."""
     digital_object = SIPDigitalObject(
         source_filepath="tests/data/test_file.txt",
@@ -43,5 +43,25 @@ def simple_sip(simple_mets):
     structural_map = StructuralMap(root_div=root_div)
     simple_mets.add_structural_map(structural_map)
     simple_mets.generate_file_references()
+    return SIP(mets=simple_mets, digital_objects=digital_objects)
 
-    return SIP(mets=simple_mets)
+
+@pytest.fixture
+def digital_objects():
+    """A fixture for preparing a list of digital objects."""
+    digital_objects = {
+        SIPDigitalObject(
+            source_filepath="tests/data/test_file.txt",
+            sip_filepath="test_file.txt"
+        ),
+        SIPDigitalObject(
+            source_filepath="tests/data/test_audio.wav",
+            sip_filepath="test_audio.wav"
+        ),
+        SIPDigitalObject(
+            source_filepath="tests/data/test_csv.csv",
+            sip_filepath="test_csv.csv"
+        )
+    }
+
+    return digital_objects
