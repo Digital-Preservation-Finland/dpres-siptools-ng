@@ -366,5 +366,5 @@ def _add_metadata(div: StructuralMapDiv,
             event_outcome_detail=("Descriptive metadata imported to "
                                   "mets dmdSec from external source")
         )
-        div.metadata.add(event)
-    div.metadata.add(metadata)
+        div.add_metadata(event)
+    div.add_metadata(metadata)
