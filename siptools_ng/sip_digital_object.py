@@ -168,7 +168,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         self,
         source_filepath: Union[str, Path],
         sip_filepath: Union[str, Path],
-        metadata: Optional[Iterable[mets_builder.metadata.MetadataBase]] = (
+        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
             None
         ),
         streams: Optional[Iterable[mets_builder.DigitalObjectStream]] = None,

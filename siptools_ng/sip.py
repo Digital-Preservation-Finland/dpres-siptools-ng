@@ -11,7 +11,7 @@ from mets_builder.digital_object import DigitalObject
 from mets_builder.structural_map import StructuralMap, StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   MetadataBase, ImportedMetadata)
+                                   Metadata, ImportedMetadata)
 
 import siptools_ng.agent
 from siptools_ng.sip_digital_object import SIPDigitalObject
@@ -353,7 +353,7 @@ def _add_digital_provenance_for_structural_map_creation(
 
 
 def _add_metadata(div: StructuralMapDiv,
-                  metadata: MetadataBase):
+                  metadata: Metadata):
     """Add metadata to a given div.
 
     The metadata should apply to all digital objects under this div (as

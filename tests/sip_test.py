@@ -14,7 +14,7 @@ from mets_builder.digital_object import DigitalObject
 from mets_builder.structural_map import StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   ImportedMetadata, MetadataBase,
+                                   ImportedMetadata, Metadata,
                                    MetadataFormat, MetadataType)
 
 
@@ -326,7 +326,7 @@ def test_add_metadata_to_div():
     div = StructuralMapDiv(div_type="test_type")
     assert div.metadata == set()
 
-    metadata = MetadataBase(
+    metadata = Metadata(
         metadata_type=MetadataType.DESCRIPTIVE,
         metadata_format=MetadataFormat.OTHER,
         other_format="PAS-special",
