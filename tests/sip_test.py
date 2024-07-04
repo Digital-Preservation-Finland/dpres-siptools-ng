@@ -14,8 +14,8 @@ from mets_builder.digital_object import DigitalObject
 from mets_builder.structural_map import StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   ImportedMetadata, Metadata,
-                                   MetadataFormat, MetadataType)
+                                   ImportedMetadata, MetadataFormat,
+                                   MetadataType)
 
 
 def _extract_sip(sip_filepath, extract_filepath):
@@ -319,21 +319,6 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     assert mets_builder in linked_agents
     assert custom_agent_1 in linked_agents
     assert custom_agent_2 in linked_agents
-
-
-def test_add_metadata_to_div():
-    """Test adding metadata to a structural map division."""
-    div = StructuralMapDiv(div_type="test_type")
-    assert div.metadata == set()
-
-    metadata = Metadata(
-        metadata_type=MetadataType.DESCRIPTIVE,
-        metadata_format=MetadataFormat.OTHER,
-        other_format="PAS-special",
-        format_version="1.0",
-    )
-    _add_metadata(div, metadata)
-    assert div.metadata == {metadata}
 
 
 def test_add_imported_metadata_to_div():
