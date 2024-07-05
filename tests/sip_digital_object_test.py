@@ -15,6 +15,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
 
 from siptools_ng.sip_digital_object import (MetadataGenerationError,
                                             SIPDigitalObject)
+from utils import find_metadata
 
 
 @pytest.mark.parametrize(
@@ -60,11 +61,7 @@ def test_generating_technical_metadata_for_text_file():
     digital_object.generate_technical_metadata()
     assert digital_object.use is None
 
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalFileObjectMetadata)
-    ][0]
-
+    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
     assert metadata.file_format == "text/plain"
     assert metadata.file_format_version == "(:unap)"
     assert metadata.charset.value == "UTF-8"
@@ -92,11 +89,7 @@ def test_generating_technical_metadata_for_image():
 
     digital_object.generate_technical_metadata()
 
-    # Technical object metadata
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalFileObjectMetadata)
-    ][0]
+    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
     assert metadata.file_format == "image/tiff"
     assert metadata.file_format_version == "6.0"
     assert metadata.charset is None
@@ -112,11 +105,7 @@ def test_generating_technical_metadata_for_image():
     # Raises error if file_created_date doesn't follow the right format
     datetime.strptime(metadata.file_created_date, format_string)
 
-    # Technical image metadata
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalImageMetadata)
-    ][0]
+    metadata = find_metadata(digital_object, TechnicalImageMetadata)
     assert metadata.compression == "zip"
     assert metadata.colorspace == "rgb"
     assert metadata.width == "10"
@@ -157,11 +146,7 @@ def test_generating_technical_metadata_for_audio():
 
     digital_object.generate_technical_metadata()
 
-    # Technical object metadata
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalFileObjectMetadata)
-    ][0]
+    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
     assert metadata.file_format == "audio/x-wav"
     assert metadata.file_format_version == "(:unap)"
     assert metadata.charset is None
@@ -177,11 +162,7 @@ def test_generating_technical_metadata_for_audio():
     # Raises error if file_created_date doesn't follow the right format
     datetime.strptime(metadata.file_created_date, format_string)
 
-    # Technical audio metadata
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalAudioMetadata)
-    ][0]
+    metadata = find_metadata(digital_object, TechnicalAudioMetadata)
     assert metadata.audio_data_encoding == "PCM"
     assert metadata.bits_per_sample == "8"
     assert metadata.codec_creator_app == "Lavf56.40.101"
@@ -206,11 +187,7 @@ def test_generating_technical_metadata_for_video():
 
     digital_object.generate_technical_metadata()
 
-    # Technical object metadata
-    metadata = [
-        data for data in digital_object.metadata
-        if isinstance(data, TechnicalFileObjectMetadata)
-    ][0]
+    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
     assert metadata.file_format == "video/dv"
     assert metadata.file_format_version == "(:unap)"
     assert metadata.charset is None

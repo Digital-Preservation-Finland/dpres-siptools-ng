@@ -16,6 +16,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
                                    ImportedMetadata, MetadataFormat,
                                    MetadataType)
+from utils import find_metadata
 
 
 def _extract_sip(sip_filepath, extract_filepath):
@@ -340,7 +341,7 @@ def test_add_imported_metadata_to_div():
     # In addtition to the added metadata, the div should contain event metadata
     assert len(div.metadata) == 2
     assert metadata in div.metadata
-    event_metadata = (div.metadata - {metadata}).pop()
+    event_metadata = find_metadata(div, DigitalProvenanceEventMetadata)
     assert event_metadata.event_type == 'metadata extraction'
     assert event_metadata.event_datetime is None
     assert event_metadata.event_detail \
