@@ -2,7 +2,7 @@
 from mets_builder import METS, MetsProfile, StructuralMap
 
 from siptools_ng.sip import SIP
-from siptools_ng.sip_digital_object import SIPDigitalObject
+from siptools_ng.file import File
 
 # A big part of using dpres-siptools-ng is to create a METS object using
 # dpres-mets-builder in tandem with some helper utilities provided by
@@ -22,11 +22,11 @@ mets = METS(
 
 # Create digital objects and add metadata to them.
 #
-# A SIPDigitalObject instance should be created for each file to be included in
-# the SIP. SIPDigitalObject can be used in a similarly to the
-# dpres-mets-builder-class DigitalObject and dpres-mets-builder documentation
-# regarding DigitalObjects apply to SIPDigitalObjects as well.
-digital_object = SIPDigitalObject(
+# A File instance should be created for each file to be included in the SIP.
+# File can be used in a similarly to the dpres-mets-builder-class DigitalObject
+# and dpres-mets-builder documentation # regarding DigitalObjects apply to
+# Files as well.
+digital_object = File(
     source_filepath="example_files/art/movie.mkv",
     sip_filepath="data/files/movie.mkv"
 )

@@ -37,11 +37,11 @@ NOTE: see also example code under ``doc/``.
 
 Siptools-ng is a layer on top of `dpres-mets-builder <https://github.com/Digital-Preservation-Finland/dpres-mets-builder>`_, providing extended capabilities to work with the METS document and finalize it into a SIP. 
 
-Handling digital objects is different from ``dpres-mets-builder`` in ``dpres-siptools-ng``. Digital objects should be handled using the ``SIPDigitalObject`` class::
+Handling digital objects is different from ``dpres-mets-builder`` in ``dpres-siptools-ng``. Digital objects should be handled using the ``File`` class::
 
-    from siptools_ng.sip_digital_object import SIPDigitalObject
+    from siptools_ng.file import File
 
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="sip_files/artwork.tif",
         sip_filepath="data/artwork.tif"
     )
@@ -54,7 +54,7 @@ However, CSV files require some aditional information, so there is a separate me
 
     digital_object.generate_technical_csv_metadata(has_header=True)
 
-See the usage documentation of ``dpres-mets-builder`` for instructions to build a ``METS`` object (replacing digital object handling with ``SIPDigitalObject``), and turn it into a SIP with the following commands::
+See the usage documentation of ``dpres-mets-builder`` for instructions to build a ``METS`` object (replacing digital object handling with ``File``), and turn it into a SIP with the following commands::
 
     from mets_builder import METS
     from siptools_ng.sip import SIP

@@ -14,7 +14,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    Metadata, ImportedMetadata)
 
 import siptools_ng.agent
-from siptools_ng.sip_digital_object import SIPDigitalObject
+from siptools_ng.file import File
 
 METS_FILENAME = "mets.xml"
 SIGNATURE_FILENAME = "signature.sig"
@@ -189,7 +189,7 @@ class SIP:
         files = {path for path in directory_path.rglob("*") if path.is_file()}
 
         digital_objects = {
-            SIPDigitalObject(
+            File(
                 source_filepath=file_,
                 sip_filepath=file_.relative_to(directory_path.parent)
             )

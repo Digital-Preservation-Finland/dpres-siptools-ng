@@ -155,7 +155,7 @@ class MetadataGenerationError(Exception):
     """Error raised when there is an error in metadata generation."""
 
 
-class SIPDigitalObject(mets_builder.DigitalObject):
+class File(mets_builder.DigitalObject):
     """Class for handling digital objects in SIPs.
 
     This class inherits DigitalObject of mets_builder, meaning that it can be
@@ -176,7 +176,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
         *args,
         **kwargs
     ) -> None:
-        """Constructor for SIPDigitalObject.
+        """Constructor for File.
 
         :param source_filepath: File path of the local source file for this
             digital object. Symbolic links in the path are resolved.
@@ -276,7 +276,7 @@ class SIPDigitalObject(mets_builder.DigitalObject):
     ) -> None:
         """Generate technical metadata for this digital object.
 
-        Scrapes the file found in SIPDigitalObject.source_filepath,
+        Scrapes the file found in File.source_filepath,
         turning the scraped information into a
         mets_builder.metadata.TechnicalFileObjectMetadata object, and
         finally adds the metadata to this digital object.

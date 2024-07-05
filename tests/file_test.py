@@ -1,4 +1,4 @@
-"""Test SIPDigitalObject."""
+"""Test File."""
 import itertools
 from datetime import datetime
 
@@ -13,8 +13,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    TechnicalBitstreamObjectMetadata,
                                    TechnicalVideoMetadata)
 
-from siptools_ng.sip_digital_object import (MetadataGenerationError,
-                                            SIPDigitalObject)
+from siptools_ng.file import MetadataGenerationError, File
 from utils import find_metadata
 
 
@@ -30,7 +29,7 @@ from utils import find_metadata
 def test_digital_object_source_filepath_validity(source_filepath):
     """Test that invalid source filepath raises error."""
     with pytest.raises(ValueError) as error:
-        SIPDigitalObject(
+        File(
             source_filepath=source_filepath,
             sip_filepath="sip_data/test_file.txt"
         )
@@ -41,7 +40,7 @@ def test_resolve_symbolic_link_as_source_filepath():
     """Test that if symbolic link is given as source filepath, it is resolved
     to the orginal file.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/symbolic_link_to_test_file",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -53,7 +52,7 @@ def test_generating_technical_metadata_for_text_file():
     """Test that generating technical metadata for a text file results in
     correct information.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -82,7 +81,7 @@ def test_generating_technical_metadata_for_image():
     """Test that generating technical metadata for an image results in correct
     information.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_image.tif",
         sip_filepath="sip_data/test_image.tif"
     )
@@ -122,7 +121,7 @@ def test_generating_technical_metadata_multiple_times():
     """Test that it is not possible to generate technical metadata multiple
     times.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -139,7 +138,7 @@ def test_generating_technical_metadata_for_audio():
     """Test that generating technical metadata for an audio file results in
     correct information.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_audio.wav",
         sip_filepath="sip_data/test_audio.wav"
     )
@@ -180,7 +179,7 @@ def test_generating_technical_metadata_for_video():
     """Test that generating technical metadata for an video file results in
     correct information.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_video.dv",
         sip_filepath="sip_data/test_video.dv"
     )
@@ -232,7 +231,7 @@ def test_generate_technical_metadata_for_video_container():
     Test that generating technical metadata for a video contaier results
     in correct information and linkings
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_video_ffv_flac.mkv",
         sip_filepath="sip_data/test_video_ffv_flac.mkv"
     )
@@ -334,7 +333,7 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     :param expected_use: Expected value of use attribute
     """
     monkeypatch.setattr("file_scraper.scraper.Scraper.grade", lambda _: grade)
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_segy.sgy"
     )
@@ -346,7 +345,7 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
 def test_generate_metadata_with_predefined_values():
     """Test that it is possible to predefine values when generating metadata.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -416,7 +415,7 @@ def test_generate_metadata_with_predefined_values():
 )
 def test_invalid_generate_metadata_params(invalid_init_params, error_message):
     """Test that invalid arguments when generating metadata raise an error."""
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -478,7 +477,7 @@ def test_generating_technical_metadata_for_csv_file(
     """Test that generating technical metadata for a CSV file results in
     correct information.
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_csv.csv",
         sip_filepath="sip_data/test_csv.csv"
     )
@@ -556,7 +555,7 @@ def test_event(event_type, event_detail, event_outcome_detail,
     :param expected_linked_agents: Names of agents that should be linked
         to event
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
@@ -627,7 +626,7 @@ def test_skip_event(kwargs, expected_event_types):
     :param kwargs: Arguments for metadata generation
     :param expected_event_types: Types of events that should be created
     """
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )

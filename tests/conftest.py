@@ -6,7 +6,7 @@ from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
 from packaging import version
 
 from siptools_ng.sip import SIP
-from siptools_ng.sip_digital_object import SIPDigitalObject
+from siptools_ng.file import File
 
 if version.parse(pytest.__version__) < version.parse("3.9.0"):
     @pytest.fixture(scope="function")
@@ -35,7 +35,7 @@ def simple_mets():
 @pytest.fixture
 def simple_sip(simple_mets, digital_objects):
     """A fixture for preparing a simple SIP object."""
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="test_file.txt"
     )
@@ -50,15 +50,15 @@ def simple_sip(simple_mets, digital_objects):
 def digital_objects():
     """A fixture for preparing a list of digital objects."""
     digital_objects = {
-        SIPDigitalObject(
+        File(
             source_filepath="tests/data/test_file.txt",
             sip_filepath="test_file.txt"
         ),
-        SIPDigitalObject(
+        File(
             source_filepath="tests/data/test_audio.wav",
             sip_filepath="test_audio.wav"
         ),
-        SIPDigitalObject(
+        File(
             source_filepath="tests/data/test_csv.csv",
             sip_filepath="test_csv.csv"
         )

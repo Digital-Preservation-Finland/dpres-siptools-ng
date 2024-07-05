@@ -10,7 +10,7 @@ from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
 from mets_builder.serialize import NAMESPACES
 
 from siptools_ng.sip import SIP
-from siptools_ng.sip_digital_object import SIPDigitalObject
+from siptools_ng.file import File
 
 
 def _extract_sip(sip_filepath, extract_filepath):
@@ -40,11 +40,11 @@ def test_file_location_in_sip(tmp_path):
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    digital_object_1 = SIPDigitalObject(
+    digital_object_1 = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="data/files/test_file_1.txt"
     )
-    digital_object_2 = SIPDigitalObject(
+    digital_object_2 = File(
         source_filepath="tests/data/test_file.txt",
         sip_filepath="data/files/test_file_2.txt"
     )
@@ -81,7 +81,7 @@ def test_stream_relationships_in_sip_mets(tmp_path):
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    digital_object = SIPDigitalObject(
+    digital_object = File(
         source_filepath="tests/data/test_video_ffv_flac.mkv",
         sip_filepath="data/files/test_video.mkv"
     )
@@ -180,7 +180,7 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
     )
     # Four instances of the same Matroska video file
     digital_objects = [
-        SIPDigitalObject(
+        File(
             source_filepath="tests/data/test_video_ffv_flac.mkv",
             sip_filepath=f"data/files/test_video_{i}.mkv"
         )
@@ -188,7 +188,7 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
     ]
     # One different digital object
     digital_objects.append(
-        SIPDigitalObject(
+        File(
             source_filepath="tests/data/test_video.dv",
             sip_filepath="data/files/test_video.dv"
         )
