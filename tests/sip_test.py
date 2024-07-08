@@ -19,9 +19,9 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
 from utils import find_metadata
 
 
-def _extract_sip(sip_filepath, extract_filepath):
+def _extract_sip(digital_object_path, extract_filepath):
     """Extract tarred SIP to given path."""
-    with tarfile.open(sip_filepath) as sip:
+    with tarfile.open(digital_object_path) as sip:
         sip.extractall(extract_filepath)
 
 
@@ -42,7 +42,7 @@ def test_creating_sip_with_zero_files():
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    sip = SIP(mets=mets, digital_objects=[])
+    sip = SIP(mets=mets, files=[])
 
     with pytest.raises(ValueError) as error:
         sip.finalize(
@@ -53,9 +53,9 @@ def test_creating_sip_with_zero_files():
     assert len(sip.mets.structural_maps) == 0
 
 
-def test_default_structural_map(simple_mets, digital_objects):
+def test_default_structural_map(simple_mets, files):
     """Test that the default structural map is generated."""
-    sip = SIP(mets=simple_mets, digital_objects=digital_objects)
+    sip = SIP(mets=simple_mets, files=files)
     assert len(sip.mets.structural_maps) == 1
 
 
@@ -188,9 +188,9 @@ def test_generating_structural_map_from_directory():
 
     The root div should be an additional wrapping div with type 'directory'.
     """
-    do1 = DigitalObject(sip_filepath="data/a/file1.txt")
-    do2 = DigitalObject(sip_filepath="data/a/file2.txt")
-    do3 = DigitalObject(sip_filepath="data/b/deep/directory/chain/file3.txt")
+    do1 = DigitalObject(path="data/a/file1.txt")
+    do2 = DigitalObject(path="data/a/file2.txt")
+    do3 = DigitalObject(path="data/b/deep/directory/chain/file3.txt")
     digital_objects = (do1, do2, do3)
 
     structural_map = structural_map_from_directory_structure(digital_objects)
@@ -245,7 +245,7 @@ def test_generating_structural_map_digital_provenance():
     been added to the root div of the generated structural map. The agent
     should also be linked to the event as the executing program.
     """
-    digital_object = DigitalObject(sip_filepath="data/file.txt")
+    digital_object = DigitalObject(path="data/file.txt")
     structural_map = structural_map_from_directory_structure([digital_object])
 
     root_div = structural_map.root_div
@@ -289,7 +289,7 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     structural map. The agents should also be linked to the structmap creation
     event as executing programs.
     """
-    digital_object = DigitalObject(sip_filepath="data/file.txt")
+    digital_object = DigitalObject(path="data/file.txt")
     custom_agent_1 = DigitalProvenanceAgentMetadata(
         agent_name="custom_agent_1",
         agent_version="1.0",

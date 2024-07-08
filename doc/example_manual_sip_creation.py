@@ -28,7 +28,7 @@ mets = METS(
 # Files as well.
 digital_object = File(
     path="example_files/art/movie.mkv",
-    sip_filepath="data/files/movie.mkv"
+    digital_object_path="data/files/movie.mkv"
 )
 
 # The technical metadata for the digital object can be generated automatically

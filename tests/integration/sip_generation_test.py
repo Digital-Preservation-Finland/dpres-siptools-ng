@@ -13,9 +13,9 @@ from siptools_ng.sip import SIP
 from siptools_ng.file import File
 
 
-def _extract_sip(sip_filepath, extract_filepath):
+def _extract_sip(digital_object_path, extract_filepath):
     """Extract tarred SIP to given path."""
-    with tarfile.open(sip_filepath) as sip:
+    with tarfile.open(digital_object_path) as sip:
         sip.extractall(extract_filepath)
 
 
@@ -40,21 +40,24 @@ def test_file_location_in_sip(tmp_path):
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    digital_object_1 = File(
+    file_1 = File(
         path="tests/data/test_file.txt",
-        sip_filepath="data/files/test_file_1.txt"
+        digital_object_path="data/files/test_file_1.txt"
     )
-    digital_object_2 = File(
+    file_2 = File(
         path="tests/data/test_file.txt",
-        sip_filepath="data/files/test_file_2.txt"
+        digital_object_path="data/files/test_file_2.txt"
     )
-    digital_objects = [digital_object_1, digital_object_2]
+    files = [file_1, file_2]
+    digital_objects = []
+    for file in files:
+        digital_objects.append(file.digital_object)
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
     mets.add_structural_map(structural_map)
     mets.generate_file_references()
 
-    sip = SIP(mets=mets, digital_objects=digital_objects)
+    sip = SIP(mets=mets, files=files)
     sip.finalize(
         output_filepath=output_filepath,
         sign_key_filepath="tests/data/rsa-keys.crt"
@@ -81,12 +84,13 @@ def test_stream_relationships_in_sip_mets(tmp_path):
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
-    digital_object = File(
+    file = File(
         path="tests/data/test_video_ffv_flac.mkv",
-        sip_filepath="data/files/test_video.mkv"
+        digital_object_path="data/files/test_video.mkv"
     )
-    digital_object.generate_technical_metadata()
-    root_div = StructuralMapDiv("test_div", digital_objects=[digital_object])
+    file.generate_technical_metadata()
+    root_div = StructuralMapDiv("test_div",
+                                digital_objects=[file.digital_object])
     structural_map = StructuralMap(root_div=root_div)
     mets.add_structural_map(structural_map)
     mets.generate_file_references()
@@ -179,22 +183,24 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
         creator_type="INDIVIDUAL"
     )
     # Four instances of the same Matroska video file
-    digital_objects = [
+    files = [
         File(
             path="tests/data/test_video_ffv_flac.mkv",
-            sip_filepath=f"data/files/test_video_{i}.mkv"
+            digital_object_path=f"data/files/test_video_{i}.mkv"
         )
         for i in range(0, 4)
     ]
     # One different digital object
-    digital_objects.append(
+    files.append(
         File(
             path="tests/data/test_video.dv",
-            sip_filepath="data/files/test_video.dv"
+            digital_object_path="data/files/test_video.dv"
         )
     )
-    for digital_object in digital_objects:
-        digital_object.generate_technical_metadata()
+    digital_objects = []
+    for file in files:
+        file.generate_technical_metadata()
+        digital_objects.append(file.digital_object)
 
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)

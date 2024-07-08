@@ -155,7 +155,7 @@ class MetadataGenerationError(Exception):
     """Error raised when there is an error in metadata generation."""
 
 
-class File(mets_builder.DigitalObject):
+class File():
     """Class for handling digital objects in SIPs.
 
     This class inherits DigitalObject of mets_builder, meaning that it can be
@@ -167,7 +167,7 @@ class File(mets_builder.DigitalObject):
     def __init__(
         self,
         path: Union[str, Path],
-        sip_filepath: Union[str, Path],
+        digital_object_path: Union[str, Path],
         metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
             None
         ),
@@ -180,7 +180,7 @@ class File(mets_builder.DigitalObject):
 
         :param path: File path of the local source file for this
             digital object. Symbolic links in the path are resolved.
-        :param sip_filepath: File path of this digital object in the
+        :param digital_object_path: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
         :param metadata: Iterable of metadata objects that describe this
@@ -194,17 +194,16 @@ class File(mets_builder.DigitalObject):
             identifier is generated automatically.
         """
         self.path = Path(path)
-        self._technical_metadata_generated = False
-        self._csv_has_header = None
-
-        super().__init__(
-            sip_filepath=sip_filepath,
+        self.digital_object = mets_builder.DigitalObject(
+            path=digital_object_path,
             metadata=metadata,
             streams=streams,
             identifier=identifier,
             *args,
             **kwargs
         )
+        self._technical_metadata_generated = False
+        self._csv_has_header = None
 
     @property
     def path(self) -> Path:
@@ -240,7 +239,7 @@ class File(mets_builder.DigitalObject):
         """
         if stream["mimetype"] == "text/csv":
             return _create_technical_csv_metadata(stream,
-                                                  self.sip_filepath,
+                                                  self.digital_object.path,
                                                   self._csv_has_header)
         stream_type = stream["stream_type"]
         if stream_type == "image":
@@ -427,13 +426,13 @@ class File(mets_builder.DigitalObject):
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-        self.add_metadata(file_metadata)
+        self.digital_object.add_metadata(file_metadata)
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
         characteristics = self._create_technical_characteristics(stream)
         if characteristics:
-            self.add_metadata(characteristics)
+            self.digital_object.add_metadata(characteristics)
 
         # Create metadata for the streams of a given file
         for i, stream in enumerate(scraper.streams.values()):
@@ -463,7 +462,7 @@ class File(mets_builder.DigitalObject):
             if characteristics:
                 digital_object_stream.add_metadata(characteristics)
 
-            self.add_stream(digital_object_stream)
+            self.digital_object.add_stream(digital_object_stream)
 
         # Document file scraping
         if not checksum:
@@ -495,8 +494,8 @@ class File(mets_builder.DigitalObject):
             agent_role="executing program"
         )
 
-        self.add_metadata(checksum_event)
-        self.add_metadata(file_scraper_agent)
+        self.digital_object.add_metadata(checksum_event)
+        self.digital_object.add_metadata(file_scraper_agent)
 
     def _add_metadata_extraction_event(self, scraper):
         """Add metadata extraction event to a digital object."""
@@ -518,12 +517,12 @@ class File(mets_builder.DigitalObject):
         agents = [siptools_ng.agent.get_file_scraper_agent()] \
             + _create_scraper_agents(scraper_infos)
         for agent in agents:
-            self.add_metadata(agent)
+            self.digital_object.add_metadata(agent)
             event.link_agent_metadata(
                 agent_metadata=agent,
                 agent_role="executing program"
             )
-        self.add_metadata(event)
+        self.digital_object.add_metadata(event)
 
     def _add_format_identification_event(self, scraper):
         """Add format identification event to a digital object."""
@@ -545,13 +544,13 @@ class File(mets_builder.DigitalObject):
             + _create_scraper_agents(detector_infos)
 
         for agent in agents:
-            self.add_metadata(agent)
+            self.digital_object.add_metadata(agent)
             event.link_agent_metadata(
                 agent_metadata=agent,
                 agent_role="executing program"
             )
 
-        self.add_metadata(event)
+        self.digital_object.add_metadata(event)
 
     # TODO: siptools-ng currently does not validate digital objects, so
     # this method is unused.

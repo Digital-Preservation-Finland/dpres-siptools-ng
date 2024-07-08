@@ -31,7 +31,7 @@ def test_digital_object_path_validity(path):
     with pytest.raises(ValueError) as error:
         File(
             path=path,
-            sip_filepath="sip_data/test_file.txt"
+            digital_object_path="sip_data/test_file.txt"
         )
     assert "is not a file." in str(error.value)
 
@@ -42,7 +42,7 @@ def test_resolve_symbolic_link_as_path():
     """
     digital_object = File(
         path="tests/data/symbolic_link_to_test_file",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
     assert not digital_object.path.is_symlink()
     assert digital_object.path.is_file()
@@ -54,7 +54,7 @@ def test_generating_technical_metadata_for_text_file():
     """
     digital_object = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
 
     digital_object.generate_technical_metadata()
@@ -83,7 +83,7 @@ def test_generating_technical_metadata_for_image():
     """
     digital_object = File(
         path="tests/data/test_image.tif",
-        sip_filepath="sip_data/test_image.tif"
+        digital_object_path="sip_data/test_image.tif"
     )
 
     digital_object.generate_technical_metadata()
@@ -123,7 +123,7 @@ def test_generating_technical_metadata_multiple_times():
     """
     digital_object = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
     digital_object.generate_technical_metadata()
 
@@ -140,7 +140,7 @@ def test_generating_technical_metadata_for_audio():
     """
     digital_object = File(
         path="tests/data/test_audio.wav",
-        sip_filepath="sip_data/test_audio.wav"
+        digital_object_path="sip_data/test_audio.wav"
     )
 
     digital_object.generate_technical_metadata()
@@ -179,14 +179,14 @@ def test_generating_technical_metadata_for_video():
     """Test that generating technical metadata for an video file results in
     correct information.
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_video.dv",
-        sip_filepath="sip_data/test_video.dv"
+        digital_object_path="sip_data/test_video.dv"
     )
 
-    digital_object.generate_technical_metadata()
+    file.generate_technical_metadata()
 
-    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
+    metadata = find_metadata(file, TechnicalFileObjectMetadata)
     assert metadata.file_format == "video/dv"
     assert metadata.file_format_version == "(:unap)"
     assert metadata.charset is None
@@ -204,7 +204,7 @@ def test_generating_technical_metadata_for_video():
 
     # Technical video metadata
     metadata = [
-        data for data in digital_object.metadata
+        data for data in file.digital_object.metadata
         if isinstance(data, TechnicalVideoMetadata)
     ][0]
     assert metadata.duration == "PT0.08S"
@@ -231,20 +231,20 @@ def test_generate_technical_metadata_for_video_container():
     Test that generating technical metadata for a video contaier results
     in correct information and linkings
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_video_ffv_flac.mkv",
-        sip_filepath="sip_data/test_video_ffv_flac.mkv"
+        digital_object_path="sip_data/test_video_ffv_flac.mkv"
     )
-    digital_object.generate_technical_metadata()
+    file.generate_technical_metadata()
 
     # Get a flat list of all technical metadata objects; we'll verify their
     # relationship later.
     metadatas = list(
         # Flatten the list of metadata objects for each stream
         itertools.chain.from_iterable([
-            stream.metadata for stream in digital_object.streams
+            stream.metadata for stream in file.digital_object.streams
         ])
-    ) + list(digital_object.metadata)
+    ) + list(file.digital_object.metadata)
 
     # Three technical metadata objects are created
     ffv_bitstream = next(
@@ -282,14 +282,14 @@ def test_generate_technical_metadata_for_video_container():
     )
 
     # Check that streams are added into the digital object
-    assert len(digital_object.streams) == 2
+    assert len(file.digital_object.streams) == 2
 
     audio_stream = next(
-        stream for stream in digital_object.streams
+        stream for stream in file.digital_object.streams
         if flac_bitstream in stream.metadata
     )
     video_stream = next(
-        stream for stream in digital_object.streams
+        stream for stream in file.digital_object.streams
         if ffv_bitstream in stream.metadata
     )
 
@@ -335,7 +335,7 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     monkeypatch.setattr("file_scraper.scraper.Scraper.grade", lambda _: grade)
     digital_object = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_segy.sgy"
+        digital_object_path="sip_data/test_segy.sgy"
     )
 
     digital_object.generate_technical_metadata()
@@ -345,12 +345,12 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
 def test_generate_metadata_with_predefined_values():
     """Test that it is possible to predefine values when generating metadata.
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
 
-    digital_object.generate_technical_metadata(
+    file.generate_technical_metadata(
         file_format="predefined_file_format",
         file_format_version="predefined_file_format_version",
         checksum_algorithm="SHA-256",
@@ -367,7 +367,7 @@ def test_generate_metadata_with_predefined_values():
     )
 
     metadata = [
-        data for data in digital_object.metadata
+        data for data in file.digital_object.metadata
         if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
 
@@ -417,7 +417,7 @@ def test_invalid_generate_metadata_params(invalid_init_params, error_message):
     """Test that invalid arguments when generating metadata raise an error."""
     digital_object = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
     with pytest.raises(ValueError) as error:
         digital_object.generate_technical_metadata(**invalid_init_params)
@@ -477,16 +477,16 @@ def test_generating_technical_metadata_for_csv_file(
     """Test that generating technical metadata for a CSV file results in
     correct information.
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_csv.csv",
-        sip_filepath="sip_data/test_csv.csv"
+        digital_object_path="sip_data/test_csv.csv"
     )
 
-    digital_object.generate_technical_metadata(file_format="text/csv", **args)
+    file.generate_technical_metadata(file_format="text/csv", **args)
 
     # Technical object metadata
     metadata = [
-        data for data in digital_object.metadata
+        data for data in file.digital_object.metadata
         if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
     assert metadata.file_format == "text/csv"
@@ -506,7 +506,7 @@ def test_generating_technical_metadata_for_csv_file(
 
     # Technical CSV metadata
     metadata = [
-        data for data in digital_object.metadata
+        data for data in file.digital_object.metadata
         if isinstance(data, TechnicalCSVMetadata)
     ][0]
     assert metadata.filenames == ["sip_data/test_csv.csv"]
@@ -555,14 +555,14 @@ def test_event(event_type, event_detail, event_outcome_detail,
     :param expected_linked_agents: Names of agents that should be linked
         to event
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
-    digital_object.generate_technical_metadata()
+    file.generate_technical_metadata()
 
     event = next(
-        metadata for metadata in digital_object.metadata
+        metadata for metadata in file.digital_object.metadata
         if (
             isinstance(metadata, DigitalProvenanceEventMetadata)
             and metadata.event_type == event_type
@@ -593,7 +593,7 @@ def test_event(event_type, event_detail, event_outcome_detail,
     # Expected agent metadata should have been added also to
     # digital_object
     assert expected_linked_agents <= {
-        metadata.agent_name for metadata in digital_object.metadata
+        metadata.agent_name for metadata in file.digital_object.metadata
         if isinstance(metadata, DigitalProvenanceAgentMetadata)
     }
 
@@ -626,13 +626,13 @@ def test_skip_event(kwargs, expected_event_types):
     :param kwargs: Arguments for metadata generation
     :param expected_event_types: Types of events that should be created
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_file.txt",
-        sip_filepath="sip_data/test_file.txt"
+        digital_object_path="sip_data/test_file.txt"
     )
-    digital_object.generate_technical_metadata(**kwargs)
+    file.generate_technical_metadata(**kwargs)
     event_types = {
-        metadata.event_type for metadata in digital_object.metadata
+        metadata.event_type for metadata in file.digital_object.metadata
         if isinstance(metadata, DigitalProvenanceEventMetadata)
     }
     assert event_types == expected_event_types

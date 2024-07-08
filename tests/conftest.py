@@ -33,34 +33,33 @@ def simple_mets():
 
 
 @pytest.fixture
-def simple_sip(simple_mets, digital_objects):
+def simple_sip(simple_mets, files):
     """A fixture for preparing a simple SIP object."""
-    digital_object = File(
-        path="tests/data/test_file.txt",
-        sip_filepath="test_file.txt"
-    )
-    root_div = StructuralMapDiv("test_div", digital_objects=[digital_object])
+    digital_objects = []
+    for file in files:
+        digital_objects.append(file.digital_object)
+    root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
     simple_mets.add_structural_map(structural_map)
     simple_mets.generate_file_references()
-    return SIP(mets=simple_mets, digital_objects=digital_objects)
+    return SIP(mets=simple_mets, files=files)
 
 
 @pytest.fixture
-def digital_objects():
+def files():
     """A fixture for preparing a list of digital objects."""
     digital_objects = {
         File(
             path="tests/data/test_file.txt",
-            sip_filepath="test_file.txt"
+            digital_object_path="test_file.txt"
         ),
         File(
             path="tests/data/test_audio.wav",
-            sip_filepath="test_audio.wav"
+            digital_object_path="test_audio.wav"
         ),
         File(
             path="tests/data/test_csv.csv",
-            sip_filepath="test_csv.csv"
+            digital_object_path="test_csv.csv"
         )
     }
 

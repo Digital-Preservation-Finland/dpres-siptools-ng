@@ -25,7 +25,7 @@ class SIP:
 
     def __init__(
             self,
-            digital_objects: Iterable[DigitalObject],
+            files: Iterable[File],
             mets: mets_builder.METS
     ) -> None:
         """Constructor for SIP class.
@@ -34,7 +34,8 @@ class SIP:
         :param digital_objects: Digital objects to be included.
         """
         self.mets = mets
-        self._add_default_structural_map(digital_objects)
+        self.files = files
+        self._add_default_structural_map(files)
 
     def finalize(
         self,
@@ -130,22 +131,25 @@ class SIP:
         :param signature_filepath: Filepath to the signature file (written in
             advance) that is included in this SIP.
         """
-        tmp_sip_filepath = Path(f"{output_filepath}.tmp")
-        with tarfile.open(tmp_sip_filepath, "w") as tarred_sip:
+        tmp_digital_object_path = Path(f"{output_filepath}.tmp")
+        with tarfile.open(tmp_digital_object_path, "w") as tarred_sip:
             tarred_sip.add(name=mets_filepath, arcname=METS_FILENAME)
             tarred_sip.add(name=signature_filepath, arcname=SIGNATURE_FILENAME)
-            for digital_object in self.mets.digital_objects:
+            for file in self.files:
                 tarred_sip.add(
-                    name=digital_object.path,
-                    arcname=digital_object.sip_filepath
+                    name=file.path,
+                    arcname=file.digital_object.path
                 )
 
-        tmp_sip_filepath.rename(output_filepath)
+        tmp_digital_object_path.rename(output_filepath)
 
-    def _add_default_structural_map(self, digital_objects) -> None:
+    def _add_default_structural_map(self, files) -> None:
         """Automatically generates a default structural map based on the
         directory structure.
         """
+        digital_objects = []
+        for file in files:
+            digital_objects.append(file.digital_object)
         if len(digital_objects) > 0:
             structural_map = structural_map_from_directory_structure(
                 digital_objects=digital_objects,
@@ -186,20 +190,21 @@ class SIP:
                 f"Path '{str(directory_path)}' is not a directory."
             )
 
-        files = {path for path in directory_path.rglob("*") if path.is_file()}
+        file_paths = {
+            path for path in directory_path.rglob("*") if path.is_file()}
 
-        digital_objects = {
+        files = {
             File(
                 path=file_,
-                sip_filepath=file_.relative_to(directory_path.parent)
+                digital_object_path=file_.relative_to(directory_path.parent)
             )
-            for file_ in files
+            for file_ in file_paths
         }
 
-        for digital_object in digital_objects:
-            digital_object.generate_technical_metadata()
+        for file in files:
+            file.generate_technical_metadata()
 
-        return SIP(mets=mets, digital_objects=digital_objects)
+        return SIP(mets=mets, files=files)
 
 
 def structural_map_from_directory_structure(
@@ -212,15 +217,15 @@ def structural_map_from_directory_structure(
 
     Returns a StructuralMap instance with StructuralMapDivs generated and
     DigitalObjects added to the generated StructuralMapDivs according to
-    the directory structure as inferred from the sip_filepath attributes of
-    the given digital objects.
+    the directory structure as inferred from the digital_object_path attributes
+    of the given digital objects.
 
     The div types will be set to be the same as the corresponding directory
     name. The entire div tree will be placed into a wrapping div with type
     "directory".
 
     For example, if three digital objects are given, and their respective
-    sip_filepath attributes are:
+    digital_object_path attributes are:
     - "data/directory_1/file_1.txt"
     - "data/directory_1/file_2.txt"
     - "data/directory_2/file_3.txt"
@@ -275,9 +280,9 @@ def structural_map_from_directory_structure(
 
     for digital_object in digital_objects:
 
-        sip_filepath = PurePath(digital_object.sip_filepath)
+        digital_object_path = PurePath(digital_object.path)
 
-        for path in sip_filepath.parents:
+        for path in digital_object_path.parents:
             # Do not process path "."
             if path == PurePath("."):
                 continue
@@ -292,7 +297,7 @@ def structural_map_from_directory_structure(
 
         # Add the digital object to the div corresponding its parent
         # directory
-        digital_object_parent_div = path2div[sip_filepath.parent]
+        digital_object_parent_div = path2div[digital_object_path.parent]
         digital_object_parent_div.add_digital_objects([digital_object])
 
     # Nest divs according to the directory structure
