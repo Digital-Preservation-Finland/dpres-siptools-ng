@@ -27,7 +27,7 @@ mets = METS(
 # and dpres-mets-builder documentation # regarding DigitalObjects apply to
 # Files as well.
 digital_object = File(
-    source_filepath="example_files/art/movie.mkv",
+    path="example_files/art/movie.mkv",
     sip_filepath="data/files/movie.mkv"
 )
 

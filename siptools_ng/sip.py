@@ -136,7 +136,7 @@ class SIP:
             tarred_sip.add(name=signature_filepath, arcname=SIGNATURE_FILENAME)
             for digital_object in self.mets.digital_objects:
                 tarred_sip.add(
-                    name=digital_object.source_filepath,
+                    name=digital_object.path,
                     arcname=digital_object.sip_filepath
                 )
 
@@ -190,7 +190,7 @@ class SIP:
 
         digital_objects = {
             File(
-                source_filepath=file_,
+                path=file_,
                 sip_filepath=file_.relative_to(directory_path.parent)
             )
             for file_ in files

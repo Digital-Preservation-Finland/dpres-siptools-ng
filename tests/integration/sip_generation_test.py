@@ -41,11 +41,11 @@ def test_file_location_in_sip(tmp_path):
         creator_type="INDIVIDUAL"
     )
     digital_object_1 = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="data/files/test_file_1.txt"
     )
     digital_object_2 = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="data/files/test_file_2.txt"
     )
     digital_objects = [digital_object_1, digital_object_2]
@@ -82,7 +82,7 @@ def test_stream_relationships_in_sip_mets(tmp_path):
         creator_type="INDIVIDUAL"
     )
     digital_object = File(
-        source_filepath="tests/data/test_video_ffv_flac.mkv",
+        path="tests/data/test_video_ffv_flac.mkv",
         sip_filepath="data/files/test_video.mkv"
     )
     digital_object.generate_technical_metadata()
@@ -181,7 +181,7 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
     # Four instances of the same Matroska video file
     digital_objects = [
         File(
-            source_filepath="tests/data/test_video_ffv_flac.mkv",
+            path="tests/data/test_video_ffv_flac.mkv",
             sip_filepath=f"data/files/test_video_{i}.mkv"
         )
         for i in range(0, 4)
@@ -189,7 +189,7 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
     # One different digital object
     digital_objects.append(
         File(
-            source_filepath="tests/data/test_video.dv",
+            path="tests/data/test_video.dv",
             sip_filepath="data/files/test_video.dv"
         )
     )

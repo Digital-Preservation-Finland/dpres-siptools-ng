@@ -18,7 +18,7 @@ from utils import find_metadata
 
 
 @pytest.mark.parametrize(
-    "source_filepath",
+    "path",
     [
         # Source filepath does not exist
         ("tests/data/nonexistent_test_file.txt"),
@@ -26,26 +26,26 @@ from utils import find_metadata
         ("tests/data")
     ]
 )
-def test_digital_object_source_filepath_validity(source_filepath):
+def test_digital_object_path_validity(path):
     """Test that invalid source filepath raises error."""
     with pytest.raises(ValueError) as error:
         File(
-            source_filepath=source_filepath,
+            path=path,
             sip_filepath="sip_data/test_file.txt"
         )
     assert "is not a file." in str(error.value)
 
 
-def test_resolve_symbolic_link_as_source_filepath():
+def test_resolve_symbolic_link_as_path():
     """Test that if symbolic link is given as source filepath, it is resolved
     to the orginal file.
     """
     digital_object = File(
-        source_filepath="tests/data/symbolic_link_to_test_file",
+        path="tests/data/symbolic_link_to_test_file",
         sip_filepath="sip_data/test_file.txt"
     )
-    assert not digital_object.source_filepath.is_symlink()
-    assert digital_object.source_filepath.is_file()
+    assert not digital_object.path.is_symlink()
+    assert digital_object.path.is_file()
 
 
 def test_generating_technical_metadata_for_text_file():
@@ -53,7 +53,7 @@ def test_generating_technical_metadata_for_text_file():
     correct information.
     """
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
 
@@ -82,7 +82,7 @@ def test_generating_technical_metadata_for_image():
     information.
     """
     digital_object = File(
-        source_filepath="tests/data/test_image.tif",
+        path="tests/data/test_image.tif",
         sip_filepath="sip_data/test_image.tif"
     )
 
@@ -122,7 +122,7 @@ def test_generating_technical_metadata_multiple_times():
     times.
     """
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
     digital_object.generate_technical_metadata()
@@ -139,7 +139,7 @@ def test_generating_technical_metadata_for_audio():
     correct information.
     """
     digital_object = File(
-        source_filepath="tests/data/test_audio.wav",
+        path="tests/data/test_audio.wav",
         sip_filepath="sip_data/test_audio.wav"
     )
 
@@ -180,7 +180,7 @@ def test_generating_technical_metadata_for_video():
     correct information.
     """
     digital_object = File(
-        source_filepath="tests/data/test_video.dv",
+        path="tests/data/test_video.dv",
         sip_filepath="sip_data/test_video.dv"
     )
 
@@ -232,7 +232,7 @@ def test_generate_technical_metadata_for_video_container():
     in correct information and linkings
     """
     digital_object = File(
-        source_filepath="tests/data/test_video_ffv_flac.mkv",
+        path="tests/data/test_video_ffv_flac.mkv",
         sip_filepath="sip_data/test_video_ffv_flac.mkv"
     )
     digital_object.generate_technical_metadata()
@@ -334,7 +334,7 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     """
     monkeypatch.setattr("file_scraper.scraper.Scraper.grade", lambda _: grade)
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_segy.sgy"
     )
 
@@ -346,7 +346,7 @@ def test_generate_metadata_with_predefined_values():
     """Test that it is possible to predefine values when generating metadata.
     """
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
 
@@ -416,7 +416,7 @@ def test_generate_metadata_with_predefined_values():
 def test_invalid_generate_metadata_params(invalid_init_params, error_message):
     """Test that invalid arguments when generating metadata raise an error."""
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
     with pytest.raises(ValueError) as error:
@@ -478,7 +478,7 @@ def test_generating_technical_metadata_for_csv_file(
     correct information.
     """
     digital_object = File(
-        source_filepath="tests/data/test_csv.csv",
+        path="tests/data/test_csv.csv",
         sip_filepath="sip_data/test_csv.csv"
     )
 
@@ -556,7 +556,7 @@ def test_event(event_type, event_detail, event_outcome_detail,
         to event
     """
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
     digital_object.generate_technical_metadata()
@@ -627,7 +627,7 @@ def test_skip_event(kwargs, expected_event_types):
     :param expected_event_types: Types of events that should be created
     """
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="sip_data/test_file.txt"
     )
     digital_object.generate_technical_metadata(**kwargs)

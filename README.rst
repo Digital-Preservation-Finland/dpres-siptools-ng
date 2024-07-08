@@ -42,7 +42,7 @@ Handling digital objects is different from ``dpres-mets-builder`` in ``dpres-sip
     from siptools_ng.file import File
 
     digital_object = File(
-        source_filepath="sip_files/artwork.tif",
+        path="sip_files/artwork.tif",
         sip_filepath="data/artwork.tif"
     )
 

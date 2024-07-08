@@ -13,6 +13,7 @@ Added
 - Ability to create structural maps from directory structures
 - Create a structural map automatically from directory structure when creating SIPs
 - Rename ``SIPDigitalObject`` to ``File``
+- Rename ``File`` class attribute ``source_filepath`` to ``path``
 
 0.1.0 - 2024-03-27
 ------------------

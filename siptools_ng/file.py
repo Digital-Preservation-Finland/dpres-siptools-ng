@@ -166,7 +166,7 @@ class File(mets_builder.DigitalObject):
 
     def __init__(
         self,
-        source_filepath: Union[str, Path],
+        path: Union[str, Path],
         sip_filepath: Union[str, Path],
         metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
             None
@@ -178,7 +178,7 @@ class File(mets_builder.DigitalObject):
     ) -> None:
         """Constructor for File.
 
-        :param source_filepath: File path of the local source file for this
+        :param path: File path of the local source file for this
             digital object. Symbolic links in the path are resolved.
         :param sip_filepath: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
@@ -193,7 +193,7 @@ class File(mets_builder.DigitalObject):
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
         """
-        self.source_filepath = Path(source_filepath)
+        self.path = Path(path)
         self._technical_metadata_generated = False
         self._csv_has_header = None
 
@@ -207,25 +207,25 @@ class File(mets_builder.DigitalObject):
         )
 
     @property
-    def source_filepath(self) -> Path:
-        """Getter for source_filepath."""
-        return self._source_filepath
+    def path(self) -> Path:
+        """Getter for path."""
+        return self._path
 
-    @source_filepath.setter
-    def source_filepath(self, source_filepath):
-        """Setter for source_filepath."""
-        source_filepath = Path(source_filepath)
+    @path.setter
+    def path(self, path):
+        """Setter for path."""
+        path = Path(path)
 
         # Resolve symbolic links in path
-        source_filepath = source_filepath.resolve()
+        path = path.resolve()
 
-        if not source_filepath.is_file():
+        if not path.is_file():
             raise ValueError(
-                f"Source filepath '{source_filepath}' for the digital object "
+                f"Source filepath '{path}' for the digital object "
                 "is not a file."
             )
 
-        self._source_filepath = source_filepath
+        self._path = path
 
     def _create_technical_characteristics(self, stream: dict) -> \
             Optional[mets_builder.metadata.TechnicalObjectMetadata]:
@@ -276,7 +276,7 @@ class File(mets_builder.DigitalObject):
     ) -> None:
         """Generate technical metadata for this digital object.
 
-        Scrapes the file found in File.source_filepath,
+        Scrapes the file found in File.path,
         turning the scraped information into a
         mets_builder.metadata.TechnicalFileObjectMetadata object, and
         finally adds the metadata to this digital object.
@@ -398,7 +398,7 @@ class File(mets_builder.DigitalObject):
             self._csv_has_header = csv_has_header
 
         scraper = file_scraper.scraper.Scraper(
-            filename=str(self.source_filepath),
+            filename=str(self.path),
             mimetype=file_format,
             version=file_format_version,
             charset=charset,
@@ -417,11 +417,11 @@ class File(mets_builder.DigitalObject):
             checksum_algorithm=checksum_algorithm or "MD5",
             checksum=checksum or scraper.checksum(algorithm="MD5"),
             file_created_date=file_created_date
-            or _file_creation_date(self.source_filepath),
+            or _file_creation_date(self.path),
             object_identifier_type=object_identifier_type,
             object_identifier=object_identifier,
             charset=charset or stream.get("charset", None),
-            original_name=original_name or self.source_filepath.name,
+            original_name=original_name or self.path.name,
             format_registry_name=format_registry_name,
             format_registry_key=format_registry_key,
             creating_application=creating_application,

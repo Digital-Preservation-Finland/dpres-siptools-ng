@@ -36,7 +36,7 @@ def simple_mets():
 def simple_sip(simple_mets, digital_objects):
     """A fixture for preparing a simple SIP object."""
     digital_object = File(
-        source_filepath="tests/data/test_file.txt",
+        path="tests/data/test_file.txt",
         sip_filepath="test_file.txt"
     )
     root_div = StructuralMapDiv("test_div", digital_objects=[digital_object])
@@ -51,15 +51,15 @@ def digital_objects():
     """A fixture for preparing a list of digital objects."""
     digital_objects = {
         File(
-            source_filepath="tests/data/test_file.txt",
+            path="tests/data/test_file.txt",
             sip_filepath="test_file.txt"
         ),
         File(
-            source_filepath="tests/data/test_audio.wav",
+            path="tests/data/test_audio.wav",
             sip_filepath="test_audio.wav"
         ),
         File(
-            source_filepath="tests/data/test_csv.csv",
+            path="tests/data/test_csv.csv",
             sip_filepath="test_csv.csv"
         )
     }
