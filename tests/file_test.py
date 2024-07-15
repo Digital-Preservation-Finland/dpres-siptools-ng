@@ -52,15 +52,15 @@ def test_generating_technical_metadata_for_text_file():
     """Test that generating technical metadata for a text file results in
     correct information.
     """
-    digital_object = File(
+    file = File(
         path="tests/data/test_file.txt",
         digital_object_path="sip_data/test_file.txt"
     )
 
-    digital_object.generate_technical_metadata()
-    assert digital_object.use is None
+    file.generate_technical_metadata()
+    assert file.digital_object.use is None
 
-    metadata = find_metadata(digital_object, TechnicalFileObjectMetadata)
+    metadata = find_metadata(file, TechnicalFileObjectMetadata)
     assert metadata.file_format == "text/plain"
     assert metadata.file_format_version == "(:unap)"
     assert metadata.charset.value == "UTF-8"
@@ -333,13 +333,13 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     :param expected_use: Expected value of use attribute
     """
     monkeypatch.setattr("file_scraper.scraper.Scraper.grade", lambda _: grade)
-    digital_object = File(
+    file = File(
         path="tests/data/test_file.txt",
         digital_object_path="sip_data/test_segy.sgy"
     )
 
-    digital_object.generate_technical_metadata()
-    assert digital_object.use == expected_use
+    file.generate_technical_metadata()
+    assert file.digital_object.use == expected_use
 
 
 def test_generate_metadata_with_predefined_values():

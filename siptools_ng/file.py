@@ -473,7 +473,7 @@ class File():
 
         # If file-scraper detects the file as "bit-level file" (for
         # example SEG-Y), set the use attribute accordingly.
-        self.use = USE.get(scraper.grade())
+        self.digital_object.use = USE.get(scraper.grade())
 
         self._technical_metadata_generated = True
 
