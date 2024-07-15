@@ -11,3 +11,4 @@ include:
     ref: master
     file:
       - '/pipeline/common.yml'
+      - '/pipeline/fddps.yml'
