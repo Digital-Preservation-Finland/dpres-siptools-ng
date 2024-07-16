@@ -312,8 +312,8 @@ def test_generating_sip_from_directory(tmp_path, simple_mets):
     text_files = structural_map.findall(
         (
             "mets:div[@TYPE='directory']"
-            "/mets:div[@TYPE='data']"
-            "/mets:div[@TYPE='text_files']"
+            "/mets:div[@LABEL='data']"
+            "/mets:div[@LABEL='text_files']"
             "/mets:fptr"
         ),
         namespaces=NAMESPACES
@@ -323,8 +323,8 @@ def test_generating_sip_from_directory(tmp_path, simple_mets):
     media_files = structural_map.findall(
         (
             "mets:div[@TYPE='directory']"
-            "/mets:div[@TYPE='data']"
-            "/mets:div[@TYPE='media_files']"
+            "/mets:div[@LABEL='data']"
+            "/mets:div[@LABEL='media_files']"
             "/mets:fptr"
         ),
         namespaces=NAMESPACES

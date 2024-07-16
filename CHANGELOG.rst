@@ -18,6 +18,7 @@ Changed
 - Rename ``SIPDigitalObject`` to ``File``
 - Rename ``File`` class attribute ``source_filepath`` to ``path``
 - Rename ``File`` class attribute ``sip_filepath`` to ``digital_object_path``
+- Use LABEL attribute for directory names instead of TYPE in structural map divs
 
 0.1.0 - 2024-03-27
 ------------------

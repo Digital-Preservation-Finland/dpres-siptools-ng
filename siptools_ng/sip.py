@@ -220,9 +220,9 @@ def structural_map_from_directory_structure(
     the directory structure as inferred from the digital_object_path attributes
     of the given digital objects.
 
-    The div types will be set to be the same as the corresponding directory
-    name. The entire div tree will be placed into a wrapping div with type
-    "directory".
+    The div labels will be set to be the same as the corresponding directory
+    name and div type is "directory". The entire div tree will be placed into a
+    wrapping div with type "directory".
 
     For example, if three digital objects are given, and their respective
     digital_object_path attributes are:
@@ -290,7 +290,10 @@ def structural_map_from_directory_structure(
             # Create corresponding div for directories if they do not exist
             # yet
             if path not in path2div:
-                path2div[path] = StructuralMapDiv(div_type=path.name)
+                path2div[path] = StructuralMapDiv(
+                    div_type="directory",
+                    label=path.name
+                )
 
             # Save directory relationships to be dealt with later
             directory_relationships[path.parent].add(path)

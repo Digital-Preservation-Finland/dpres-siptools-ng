@@ -182,15 +182,16 @@ def test_generating_structural_map_from_directory():
     """Test generating structural map from directory contents.
 
     There should be a div for each directory, and the divs should be nested
-    according to the directory structure. The type of each div should be the
-    corresponding directory name. The file is not represented with a div, but
-    as a DigitalObject stored in the correct div.
+    according to the directory structure. The label of each div should be the
+    corresponding directory name and the type should be "directory". The file
+    is not represented with a div, but as a DigitalObject stored in the correct
+    div.
 
     The root div should be an additional wrapping div with type 'directory'.
     """
     do1 = DigitalObject(path="data/a/file1.txt")
     do2 = DigitalObject(path="data/a/file2.txt")
-    do3 = DigitalObject(path="data/b/deep/directory/chain/file3.txt")
+    do3 = DigitalObject(path="data/b/very/long/chain/file3.txt")
     digital_objects = (do1, do2, do3)
 
     structural_map = structural_map_from_directory_structure(digital_objects)
@@ -206,22 +207,29 @@ def test_generating_structural_map_from_directory():
     # root of the user defined tree is a directory called "data", containing
     # two other directories
     data_div = root_div.divs.pop()
-    assert data_div.div_type == "data"
+    assert data_div.label == "data"
     assert len(data_div.divs) == 2
 
     # directory "a" in "data" contains digital objects 1 and 2
-    a_div = next(div for div in data_div if div.div_type == "a")
+    a_div = next(div for div in data_div if div.label == "a")
     assert a_div.digital_objects == {do1, do2}
 
     # directory "b" in "data" has a deep directory structure, at the bottom of
     # which is digital object 3
-    b_div = next(div for div in data_div if div.div_type == "b")
-    deep_div = b_div.divs.pop()
-    assert deep_div.div_type == "deep"
-    directory_div = deep_div.divs.pop()
-    assert directory_div.div_type == "directory"
-    chain_div = directory_div.divs.pop()
-    assert chain_div.div_type == "chain"
+    b_div = next(div for div in data_div if div.label == "b")
+
+    very_div = b_div.divs.pop()
+    assert very_div.label == "very"
+    assert very_div.div_type == "directory"
+
+    long_div = very_div.divs.pop()
+    assert long_div.label == "long"
+    assert long_div.div_type == "directory"
+
+    chain_div = long_div.divs.pop()
+    assert chain_div.label == "chain"
+    assert long_div.div_type == "directory"
+
     assert chain_div.digital_objects == {do3}
 
 
