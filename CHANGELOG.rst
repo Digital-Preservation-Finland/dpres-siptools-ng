@@ -12,6 +12,9 @@ Added
 - Automatic creation of PREMIS events when adding imported metadata to structural map
 - Ability to create structural maps from directory structures
 - Create a structural map automatically from directory structure when creating SIPs
+
+Changed
+^^^^^^^
 - Rename ``SIPDigitalObject`` to ``File``
 - Rename ``File`` class attribute ``source_filepath`` to ``path``
 - Rename ``File`` class attribute ``sip_filepath`` to ``digital_object_path``
