@@ -508,8 +508,8 @@ class File():
                                   "from extracted technical metadata."),
         )
 
-        # In addition file-scraper itself, create agent metadata
-        # representing each Scraper that was used
+        # In addition file-scraper itself, create agent metadata representing
+        # each Scraper that was used
         scraper_infos = [
             scraper_info for scraper_info in scraper.info.values()
             if scraper_info['class'].endswith("Scraper")
@@ -517,7 +517,6 @@ class File():
         agents = [siptools_ng.agent.get_file_scraper_agent()] \
             + _create_scraper_agents(scraper_infos)
         for agent in agents:
-            self.digital_object.add_metadata(agent)
             event.link_agent_metadata(
                 agent_metadata=agent,
                 agent_role="executing program"
@@ -534,8 +533,8 @@ class File():
                                   "successfully identified."),
         )
 
-        # In addition file-scraper itself, create agent metadata
-        # representing each Detector that was used
+        # In addition file-scraper itself, create agent metadata representing
+        # each Detector that was used
         detector_infos = [
             scraper_info for scraper_info in scraper.info.values()
             if scraper_info['class'].endswith("Detector")
@@ -544,7 +543,6 @@ class File():
             + _create_scraper_agents(detector_infos)
 
         for agent in agents:
-            self.digital_object.add_metadata(agent)
             event.link_agent_metadata(
                 agent_metadata=agent,
                 agent_role="executing program"
@@ -563,8 +561,8 @@ class File():
             event_outcome_detail=("Digital object(s) evaluated as "
                                   "well-formed and valid."),
         )
-        # In addition file-scraper itself, create agent metadata
-        # representing each Scraper that was used
+        # In addition file-scraper itself, create agent metadata representing
+        # each Scraper that was used
         scraper_infos = [
             scraper_info for scraper_info in scraper.info.values()
             if scraper_info['class'].endswith("Scraper")
@@ -572,7 +570,6 @@ class File():
         agents = [siptools_ng.agent.get_file_scraper_agent()] \
             + _create_scraper_agents(scraper_infos)
         for agent in agents:
-            self.add_metadata(agent)
             event.link_agent_metadata(
                 agent_metadata=agent,
                 agent_role="executing program"
