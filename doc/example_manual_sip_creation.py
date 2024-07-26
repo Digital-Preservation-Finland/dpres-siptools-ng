@@ -1,10 +1,11 @@
 """Example code for manual SIP creation."""
-from mets_builder import METS, MetsProfile, StructuralMap
+from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
 
 from siptools_ng.sip import SIP
 from siptools_ng.file import File
 
-# A big part of using dpres-siptools-ng is to create a METS object using
+
+# A part of using dpres-siptools-ng is to create a METS object using
 # dpres-mets-builder in tandem with some helper utilities provided by
 # dpres-siptools-ng whenever needed. See user documentation of
 # dpres-mets-builder at
@@ -20,35 +21,39 @@ mets = METS(
     creator_type="ORGANIZATION"
 )
 
-# Create digital objects and add metadata to them.
-#
-# A File instance should be created for each file to be included in the SIP.
-# File can be used in a similarly to the dpres-mets-builder-class DigitalObject
-# and dpres-mets-builder documentation # regarding DigitalObjects apply to
-# Files as well.
-digital_object = File(
+# Create files each containing a digital object which contains the sip path.
+file1 = File(
     path="example_files/art/movie.mkv",
-    digital_object_path="data/files/movie.mkv"
+    digital_object_path="data/movies/movie.mkv"
+)
+file2 = File(
+    path="example_files/text_files/file1.txt",
+    digital_object_path="data/text_files/file1.txt"
+)
+file3 = File(
+    path="example_files/text_files/file2.txt",
+    digital_object_path="data/text_files/file2.txt"
 )
 
-# The technical metadata for the digital object can be generated automatically
-# with generate_technical_metadata method. For manual metadata creation see
-# dpres-mets-builder usage documentation.
-digital_object.generate_technical_metadata()
+# Make a custom structural map div using the digital objects in files
+root_div = StructuralMapDiv("custom_div",
+                            digital_objects=[file1.digital_object,
+                                             file2.digital_object,
+                                             file3.digital_object])
 
-# Create structural map. Here done using the helper method
-# from_directory_strucure to generate a structural map according to the
-# directory structure. For manual structural map creation see
-# dpres-mets-builder usage documentation.
-structural_map = StructuralMap.from_directory_structure([digital_object])
+# Add the custom div to a structural map
+structural_map = StructuralMap(root_div=root_div)
+
+# Add the custom structural map to METS and generate file references
 mets.add_structural_map(structural_map)
-
-# Generate file references. For manual file references creation see
-# dpres-mets-builder usage documentation.
 mets.generate_file_references()
 
-# Turn the METS object into a SIP
-sip = SIP(mets=mets)
+# Make a SIP using the previously created file and METS. In addition to the
+# manually structural map a default custom map is generated based on the
+# directory structure.
+sip = SIP(mets=mets, files=[file1, file2, file3])
+
+# Finalize the SIP and write it to file
 sip.finalize(
     output_filepath="result/example-manual-sip.tar",
     sign_key_filepath="../tests/data/rsa-keys.crt"
