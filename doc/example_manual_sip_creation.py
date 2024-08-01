@@ -51,7 +51,7 @@ mets.generate_file_references()
 # Make a SIP using the previously created file and METS. In addition to the
 # manually structural map a default custom map is generated based on the
 # directory structure.
-sip = SIP(mets=mets, files=[file1, file2, file3])
+sip = SIP.from_files(mets=mets, files=[file1, file2, file3])
 
 # Finalize the SIP and write it to file
 sip.finalize(

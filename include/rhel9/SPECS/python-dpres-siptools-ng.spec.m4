@@ -1,5 +1,3 @@
-# vim:ft=spec
-
 %define file_prefix M4_FILE_PREFIX
 %define file_ext M4_FILE_EXT
 %define file_version M4_FILE_VERSION
@@ -36,6 +34,7 @@ Summary: %{summary}
 Requires:       %{py3_dist dpres-mets-builder}
 Requires:       python3-file-scraper-full
 Requires:       %{py3_dist dpres-signature}
+Requires:       %{py3_dist ipt}
 %description -n python3-dpres-siptools-ng %_description
 
 %prep
