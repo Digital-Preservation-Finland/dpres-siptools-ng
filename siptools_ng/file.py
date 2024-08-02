@@ -155,13 +155,12 @@ class MetadataGenerationError(Exception):
     """Error raised when there is an error in metadata generation."""
 
 
-class File():
+class File:
     """Class for handling digital objects in SIPs.
 
-    This class inherits DigitalObject of mets_builder, meaning that it can be
-    used normally in METS building, for example by adding it to a structural
-    map. In addition, it provides functionality for handling digital objects in
-    the SIP context.
+    A ``mets_builder.digital_object.DigitalObject`` is created for the given
+    file and is available under the ``digital_object`` property. This can be
+    used to enrich the underlying METS entry with additional metadata.
     """
 
     def __init__(
