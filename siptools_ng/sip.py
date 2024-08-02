@@ -63,7 +63,7 @@ class SIP:
         :param sign_key_filepath: Path to the signature key file that is used
             to sign the SIP.
         """
-        if len(self.mets.digital_objects) == 0:
+        if not self.mets.digital_objects:
             raise ValueError("SIP does not contain any digital objects.")
 
         output_filepath = Path(output_filepath)
@@ -157,7 +157,7 @@ class SIP:
         digital_objects = []
         for file in self.files:
             digital_objects.append(file.digital_object)
-        if len(digital_objects) > 0:
+        if digital_objects:
             structural_map = structural_map_from_directory_structure(
                 digital_objects=digital_objects,
                 additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
