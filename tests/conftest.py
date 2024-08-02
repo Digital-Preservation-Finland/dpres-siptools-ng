@@ -42,7 +42,7 @@ def simple_sip(simple_mets, files):
     structural_map = StructuralMap(root_div=root_div)
     simple_mets.add_structural_map(structural_map)
     simple_mets.generate_file_references()
-    return SIP(mets=simple_mets, files=files)
+    return SIP.from_files(mets=simple_mets, files=files)
 
 
 @pytest.fixture

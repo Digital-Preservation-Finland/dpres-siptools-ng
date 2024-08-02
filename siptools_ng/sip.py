@@ -2,16 +2,17 @@
 import tarfile
 import tempfile
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path, PurePath
-from typing import Union, Iterable, Optional
+from typing import Optional, Union
 
 import dpres_signature.signature
 import mets_builder
 from mets_builder.digital_object import DigitalObject
-from mets_builder.structural_map import StructuralMap, StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   Metadata, ImportedMetadata)
+                                   ImportedMetadata, Metadata)
+from mets_builder.structural_map import StructuralMap, StructuralMapDiv
 
 import siptools_ng.agent
 from siptools_ng.file import File
@@ -25,17 +26,23 @@ class SIP:
 
     def __init__(
             self,
-            files: Iterable[File],
-            mets: mets_builder.METS
+            mets: mets_builder.METS,
+            files: Optional[Iterable[File]] = None
     ) -> None:
         """Constructor for SIP class.
 
+        .. note:: To create a SIP from existing directory or files you
+                  should instead use :meth:``SIP.from_directory``
+                  or :meth:``SIP.from_files``.
+
         :param mets: METS object representing the METS file of this SIP.
-        :param digital_objects: Digital objects to be included.
+        :param files: Files to be added into the SIP.
         """
         self.mets = mets
-        self.files = files
-        self._add_default_structural_map(files)
+
+        self.files = []
+        if files:
+            self.files = files
 
     def finalize(
         self,
@@ -143,12 +150,12 @@ class SIP:
 
         tmp_digital_object_path.rename(output_filepath)
 
-    def _add_default_structural_map(self, files) -> None:
+    def _add_default_structural_map(self) -> None:
         """Automatically generates a default structural map based on the
         directory structure.
         """
         digital_objects = []
-        for file in files:
+        for file in self.files:
             digital_objects.append(file.digital_object)
         if len(digital_objects) > 0:
             structural_map = structural_map_from_directory_structure(
@@ -157,6 +164,33 @@ class SIP:
             )
             self.mets.add_structural_map(structural_map)
             self.mets.generate_file_references()
+
+    @classmethod
+    def from_files(
+        cls,
+        mets: mets_builder.METS,
+        files: Iterable[File]
+    ) -> "SIP":
+        """Generate a complete SIP object from a list of File instances.
+
+        Technical metadata is generated for given files if missing, and
+        structural map is generated according to the directory structure
+        defined in the files.
+
+        :param mets: Initialized METS object. The METS object will be populated
+                     with additional entries (structural map, agents, events).
+        :param files: File instances. Technical metadata is automatically
+                      generated for those that don't already have it.
+
+        :returns: SIP object initialized according to the given files
+        """
+        for file in files:
+            if not file._technical_metadata_generated:
+                file.generate_technical_metadata()
+
+        sip = cls(mets=mets, files=files)
+        sip._add_default_structural_map()
+        return sip
 
     @classmethod
     def from_directory(
@@ -201,10 +235,9 @@ class SIP:
             for file_ in file_paths
         }
 
-        for file in files:
-            file.generate_technical_metadata()
-
-        return SIP(mets=mets, files=files)
+        # Pass the generated File instances to `SIP.from_files`, which
+        # will handle rest of the automatic SIP creation.
+        return cls.from_files(mets=mets, files=files)
 
 
 def structural_map_from_directory_structure(

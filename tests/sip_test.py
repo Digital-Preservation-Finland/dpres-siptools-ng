@@ -55,7 +55,7 @@ def test_creating_sip_with_zero_files():
 
 def test_default_structural_map(simple_mets, files):
     """Test that the default structural map is generated."""
-    sip = SIP(mets=simple_mets, files=files)
+    sip = SIP.from_files(mets=simple_mets, files=files)
     assert len(sip.mets.structural_maps) == 1
 
 
