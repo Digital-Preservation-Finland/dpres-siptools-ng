@@ -6,6 +6,7 @@ import pytest
 
 import siptools_ng.agent
 
+from siptools_ng.file import File
 from siptools_ng.sip import (SIP,
                              structural_map_from_directory_structure,
                              _add_metadata)
@@ -32,6 +33,19 @@ def _get_testing_filepaths(tmp_path_of_test):
     output_filepath = tmp_path_of_test / "finalized_sip.tar"
     extracted_filepath = tmp_path_of_test / "extracted_sip"
     return output_filepath, extracted_filepath
+
+
+def _check_shared_metadata(div: StructuralMapDiv) -> bool:
+    """Check if all subdivs and digital object contain any shared metadata."""
+    # Pick a child randomly to check against the other children.
+    child = (div.digital_objects | div.divs).pop()
+    metadata = set(metadata for metadata in child.metadata)
+
+    for child in div.digital_objects | div.divs:
+        if len(child.metadata & metadata) == 0:
+            return False
+
+    return True
 
 
 def test_creating_sip_with_zero_files():
@@ -357,3 +371,128 @@ def test_add_imported_metadata_to_div():
     assert event_metadata.event_outcome.value == "success"
     assert event_metadata.event_outcome_detail\
         == "Descriptive metadata imported to mets dmdSec from external source"
+
+
+def test_metadata_deep_bundling(simple_mets):
+    """Test that shared event metadata is bundled to the structural map div
+    with a deep SIP directory structure.
+    """
+    files = {
+        File(
+            path="tests/data/test_file.txt",
+            digital_object_path="test_file.txt"
+        ),
+        File(
+            path="tests/data/test_audio.wav",
+            digital_object_path="test_audio.wav"
+        ),
+        File(
+            path="tests/data/test_csv.csv",
+            digital_object_path="div1/test_csv.csv"
+        ),
+        File(
+            path="tests/data/test_image.tif",
+            digital_object_path="div2/test_image.tif"
+        ),
+        File(
+            path="tests/data/test_video.dv",
+            digital_object_path="div2/div3/test_video.dv"
+        ),
+        File(
+            path="tests/data/test_video_ffv_flac.mkv",
+            digital_object_path="div2/div3/test_video_ffv_flac.mkv"
+        )
+    }
+    sip = SIP.from_files(mets=simple_mets, files=files)
+
+    # test for root_div
+    root_div = list(sip.mets.structural_maps)[0].root_div
+    assert not _check_shared_metadata(root_div)
+    assert len(root_div.divs) == 2
+    assert len(root_div.digital_objects) == 2
+
+    agent_names = {element.agent_name for element in root_div.metadata
+                   if isinstance(element, DigitalProvenanceAgentMetadata)}
+    expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
+                            'ResultsMergeScraper', 'PredefinedDetector',
+                            'dpres-siptools-ng', 'dpres-mets-builder',
+                            'MimeMatchScraper', 'ODFDetector', 'MagicDetector',
+                            'FidoDetector'}
+    assert agent_names >= expected_agent_names
+
+    event_types = {element.event_type for element in root_div.metadata
+                   if isinstance(element, DigitalProvenanceEventMetadata)}
+    expected_event_types = {'creation', 'message digest calculation'}
+    assert event_types >= expected_event_types
+
+    # test root_div/div1
+    div1 = next(div for div in root_div.divs if div.label == "div1")
+    assert not _check_shared_metadata(div1)
+    assert len(div1.divs) == 0
+    assert len(div1.digital_objects) == 1
+
+    agent_names = {element.agent_name for element in div1.metadata
+                   if isinstance(element, DigitalProvenanceAgentMetadata)}
+    expected_agent_names = {'CsvScraper', 'MagicTextScraper',
+                            'TextEncodingMetaScraper'}
+    assert agent_names >= expected_agent_names
+
+    event_types = {element.event_type for element in div1.metadata
+                   if isinstance(element, DigitalProvenanceEventMetadata)}
+    expected_event_types = {'format identification', 'metadata extraction'}
+    assert event_types >= expected_event_types
+
+    # test root_div/div2
+    div2 = next(div for div in root_div.divs if div.label == "div2")
+    assert not _check_shared_metadata(div2)
+    assert len(div2.divs) == 1
+    assert len(div2.digital_objects) == 1
+    agent_names = {element.agent_name for element in div2.metadata
+                   if isinstance(element, DigitalProvenanceAgentMetadata)}
+    expected_agent_names = set()
+    assert agent_names >= expected_agent_names
+
+    event_types = {element.event_type for element in div2.metadata
+                   if isinstance(element, DigitalProvenanceEventMetadata)}
+    expected_event_types = set()
+    assert event_types >= expected_event_types
+
+    # test root_div/div2/div3
+    div3 = next(div for div in div2.divs if div.label == "div3")
+    assert not _check_shared_metadata(div3)
+    assert len(div3.divs) == 0
+    assert len(div3.digital_objects) == 2
+    agent_names = {element.agent_name for element in div3.metadata
+                   if isinstance(element, DigitalProvenanceAgentMetadata)}
+    expected_agent_names = {'MediainfoScraper'}
+    assert agent_names >= expected_agent_names
+
+    event_types = {element.event_type for element in div3.metadata
+                   if isinstance(element, DigitalProvenanceEventMetadata)}
+    expected_event_types = {'metadata extraction', 'format identification'}
+    assert event_types >= expected_event_types
+
+
+def test_metadata_bundling(simple_sip):
+    """Test that shared event metadata is bundled to the structural map div.
+    """
+    root_div = next(map.root_div for map in simple_sip.mets.structural_maps
+                    if map.root_div.div_type != "test_div")
+    assert not _check_shared_metadata(root_div)
+    assert len(root_div.divs) == 0
+    assert len(root_div.digital_objects) == 3
+
+    agent_names = {element.agent_name for element in root_div.metadata
+                   if isinstance(element, DigitalProvenanceAgentMetadata)}
+    expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
+                            'ResultsMergeScraper', 'PredefinedDetector',
+                            'dpres-siptools-ng', 'dpres-mets-builder',
+                            'MimeMatchScraper', 'ODFDetector', 'MagicDetector',
+                            'FidoDetector'}
+    assert agent_names >= expected_agent_names
+
+    event_types = {element.event_type for element in root_div.metadata
+                   if isinstance(element, DigitalProvenanceEventMetadata)}
+    expected_event_types = {'format identification',
+                            'message digest calculation', 'creation'}
+    assert event_types >= expected_event_types

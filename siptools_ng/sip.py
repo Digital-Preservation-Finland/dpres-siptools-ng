@@ -347,6 +347,9 @@ def structural_map_from_directory_structure(
         structural_map, additional_agents
     )
 
+    # Bundle metadata recursively
+    structural_map.root_div.bundle_metadata()
+
     return structural_map
 
 
