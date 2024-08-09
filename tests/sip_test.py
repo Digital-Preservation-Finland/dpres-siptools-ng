@@ -227,7 +227,19 @@ def test_generating_structural_map_from_directory():
 
     # directory "a" in "data" contains digital objects 1 and 2
     a_div = next(div for div in data_div if div.label == "a")
-    assert a_div.digital_objects == {do1, do2}
+    # assert a_div.digital_objects == {do1, do2}
+
+    # directory "a" contains 2 file divs
+    assert len(a_div.divs) == 2
+
+    # the file divs of directory "a" contain the corresponding digital objects.
+    file1_div = next(div for div in a_div.divs if div.label == "file1.txt")
+    assert file1_div.digital_objects == {do1}
+    assert file1_div.div_type == "file"
+
+    file2_div = next(div for div in a_div.divs if div.label == "file2.txt")
+    assert file2_div.digital_objects == {do2}
+    assert file2_div.div_type == "file"
 
     # directory "b" in "data" has a deep directory structure, at the bottom of
     # which is digital object 3
@@ -245,7 +257,11 @@ def test_generating_structural_map_from_directory():
     assert chain_div.label == "chain"
     assert long_div.div_type == "directory"
 
-    assert chain_div.digital_objects == {do3}
+    assert len(chain_div.divs) == 1
+
+    file3_div = next(div for div in chain_div.divs if div.label == "file3.txt")
+    assert file3_div.digital_objects == {do3}
+    assert file3_div.div_type == "file"
 
 
 def test_generating_structural_map_with_no_digital_objects():
@@ -409,8 +425,9 @@ def test_metadata_deep_bundling(simple_mets):
     # test for root_div
     root_div = list(sip.mets.structural_maps)[0].root_div
     assert not _check_shared_metadata(root_div)
-    assert len(root_div.divs) == 2
-    assert len(root_div.digital_objects) == 2
+    assert len({div for div in root_div.divs if div.div_type == "file"}) == 2
+    assert len({div for div in root_div.divs if div.div_type == "directory"}) \
+        == 2
 
     agent_names = {element.agent_name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
@@ -429,8 +446,8 @@ def test_metadata_deep_bundling(simple_mets):
     # test root_div/div1
     div1 = next(div for div in root_div.divs if div.label == "div1")
     assert not _check_shared_metadata(div1)
-    assert len(div1.divs) == 0
-    assert len(div1.digital_objects) == 1
+    assert len({div for div in div1.divs if div.div_type == "file"}) == 1
+    assert len({div for div in div1.divs if div.div_type == "directory"}) == 0
 
     agent_names = {element.agent_name for element in div1.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
@@ -446,8 +463,8 @@ def test_metadata_deep_bundling(simple_mets):
     # test root_div/div2
     div2 = next(div for div in root_div.divs if div.label == "div2")
     assert not _check_shared_metadata(div2)
-    assert len(div2.divs) == 1
-    assert len(div2.digital_objects) == 1
+    assert len({div for div in div2.divs if div.div_type == "file"}) == 1
+    assert len({div for div in div2.divs if div.div_type == "directory"}) == 1
     agent_names = {element.agent_name for element in div2.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = set()
@@ -461,8 +478,8 @@ def test_metadata_deep_bundling(simple_mets):
     # test root_div/div2/div3
     div3 = next(div for div in div2.divs if div.label == "div3")
     assert not _check_shared_metadata(div3)
-    assert len(div3.divs) == 0
-    assert len(div3.digital_objects) == 2
+    assert len({div for div in div3.divs if div.div_type == "file"}) == 2
+    assert len({div for div in div3.divs if div.div_type == "directory"}) == 0
     agent_names = {element.agent_name for element in div3.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = {'MediainfoScraper'}
@@ -480,8 +497,9 @@ def test_metadata_bundling(simple_sip):
     root_div = next(map.root_div for map in simple_sip.mets.structural_maps
                     if map.root_div.div_type != "test_div")
     assert not _check_shared_metadata(root_div)
-    assert len(root_div.divs) == 0
-    assert len(root_div.digital_objects) == 3
+    assert len({div for div in root_div.divs if div.div_type == "file"}) == 3
+    assert len({div for div in root_div.divs if div.div_type == "directory"}) \
+        == 0
 
     agent_names = {element.agent_name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}

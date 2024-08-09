@@ -314,6 +314,7 @@ def test_generating_sip_from_directory(tmp_path, simple_mets):
             "mets:div[@TYPE='directory']"
             "/mets:div[@LABEL='data']"
             "/mets:div[@LABEL='text_files']"
+            "/mets:div[@TYPE='file']"
             "/mets:fptr"
         ),
         namespaces=NAMESPACES
@@ -325,6 +326,7 @@ def test_generating_sip_from_directory(tmp_path, simple_mets):
             "mets:div[@TYPE='directory']"
             "/mets:div[@LABEL='data']"
             "/mets:div[@LABEL='media_files']"
+            "/mets:div[@TYPE='file']"
             "/mets:fptr"
         ),
         namespaces=NAMESPACES

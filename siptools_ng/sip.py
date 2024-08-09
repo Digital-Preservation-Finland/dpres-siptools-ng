@@ -320,8 +320,7 @@ def structural_map_from_directory_structure(
             if path == PurePath("."):
                 continue
 
-            # Create corresponding div for directories if they do not exist
-            # yet
+            # Create corresponding div for directories if they do not exist yet
             if path not in path2div:
                 path2div[path] = StructuralMapDiv(
                     div_type="directory",
@@ -331,10 +330,13 @@ def structural_map_from_directory_structure(
             # Save directory relationships to be dealt with later
             directory_relationships[path.parent].add(path)
 
-        # Add the digital object to the div corresponding its parent
-        # directory
-        digital_object_parent_div = path2div[digital_object_path.parent]
-        digital_object_parent_div.add_digital_objects([digital_object])
+        # Create a wrapper div for the digital object and add it to parent div
+        wrapper_div = StructuralMapDiv(
+            div_type="file",
+            label=Path(digital_object.path).name
+        )
+        wrapper_div.add_digital_objects([digital_object])
+        path2div[digital_object_path.parent].divs.add(wrapper_div)
 
     # Nest divs according to the directory structure
     for parent_dir, child_dirs in directory_relationships.items():
