@@ -8,7 +8,7 @@ import siptools_ng.agent
 
 from siptools_ng.file import File
 from siptools_ng.sip import (SIP,
-                             structural_map_from_directory_structure,
+                             _structural_map_from_directory_structure,
                              _add_metadata)
 from mets_builder import METS, MetsProfile
 from mets_builder.digital_object import DigitalObject
@@ -209,7 +209,7 @@ def test_generating_structural_map_from_directory():
     do3 = DigitalObject(path="data/b/very/long/chain/file3.txt")
     digital_objects = (do1, do2, do3)
 
-    structural_map = structural_map_from_directory_structure(digital_objects)
+    structural_map = _structural_map_from_directory_structure(digital_objects)
 
     assert structural_map.structural_map_type == 'PHYSICAL'
 
@@ -269,7 +269,7 @@ def test_generating_structural_map_with_no_digital_objects():
     error.
     """
     with pytest.raises(ValueError) as error:
-        structural_map_from_directory_structure([])
+        _structural_map_from_directory_structure([])
     assert str(error.value) == (
         "Given 'digital_objects' is empty. Structural map can not be "
         "generated with zero digital objects."
@@ -285,7 +285,7 @@ def test_generating_structural_map_digital_provenance():
     should also be linked to the event as the executing program.
     """
     digital_object = DigitalObject(path="data/file.txt")
-    structural_map = structural_map_from_directory_structure([digital_object])
+    structural_map = _structural_map_from_directory_structure([digital_object])
 
     root_div = structural_map.root_div
     assert len(root_div.metadata) == 2
@@ -340,7 +340,7 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
         agent_type="software"
     )
 
-    structural_map = structural_map_from_directory_structure(
+    structural_map = _structural_map_from_directory_structure(
         [digital_object],
         additional_agents=[custom_agent_1, custom_agent_2]
     )

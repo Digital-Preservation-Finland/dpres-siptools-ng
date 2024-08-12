@@ -158,7 +158,7 @@ class SIP:
         for file in self.files:
             digital_objects.append(file.digital_object)
         if digital_objects:
-            structural_map = structural_map_from_directory_structure(
+            structural_map = _structural_map_from_directory_structure(
                 digital_objects=digital_objects,
                 additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
             )
@@ -240,7 +240,7 @@ class SIP:
         return cls.from_files(mets=mets, files=files)
 
 
-def structural_map_from_directory_structure(
+def _structural_map_from_directory_structure(
     digital_objects: Iterable[DigitalObject],
     additional_agents:
         Optional[Iterable[DigitalProvenanceAgentMetadata]] = None
