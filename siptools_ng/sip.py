@@ -375,12 +375,12 @@ def _add_digital_provenance_for_structural_map_creation(
 
     event = DigitalProvenanceEventMetadata(
         event_type="creation",
-        event_detail=(
+        detail=(
             "Creation of structural metadata with the "
             "StructuralMap.from_directory_structure method"
         ),
-        event_outcome="success",
-        event_outcome_detail=(
+        outcome="success",
+        outcome_detail=(
             f"Created METS structural map with type "
             f"'{structural_map.structural_map_type}'"
         )
@@ -415,11 +415,12 @@ def _add_metadata(div: StructuralMapDiv,
     if isinstance(metadata, ImportedMetadata):
         event = DigitalProvenanceEventMetadata(
             event_type="metadata extraction",
-            event_detail=("Descriptive metadata import from external"
-                          " source"),
-            event_outcome="success",
-            event_outcome_detail=("Descriptive metadata imported to "
-                                  "mets dmdSec from external source")
+            detail="Descriptive metadata import from external source",
+            outcome="success",
+            outcome_detail=(
+                "Descriptive metadata imported to "
+                "mets dmdSec from external source"
+            )
         )
         div.add_metadata(event)
     div.add_metadata(metadata)

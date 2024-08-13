@@ -518,7 +518,7 @@ def test_generating_technical_metadata_for_csv_file(
 
 
 @pytest.mark.parametrize(
-    "event_type,event_detail,event_outcome_detail,expected_linked_agents",
+    "event_type,detail,outcome_detail,expected_linked_agents",
     [
         (
             "message digest calculation",
@@ -545,13 +545,13 @@ def test_generating_technical_metadata_for_csv_file(
         ),
     ]
 )
-def test_event(event_type, event_detail, event_outcome_detail,
+def test_event(event_type, detail, outcome_detail,
                expected_linked_agents):
     """Test that PREMIS event metadata is created.
 
     :param event_type: Event type
-    :param event_detail: Expected event detail
-    :param event_event_outcome_detail: Expected event outcome detail
+    :param detail: Expected event detail
+    :param outcome_detail: Expected event outcome detail
     :param expected_linked_agents: Names of agents that should be linked
         to event
     """
@@ -568,32 +568,32 @@ def test_event(event_type, event_detail, event_outcome_detail,
             and metadata.event_type == event_type
         )
     )
-    assert event.event_detail == event_detail
-    assert event.event_outcome.value == "success"
-    assert event.event_outcome_detail == event_outcome_detail
+    assert event.detail == detail
+    assert event.outcome.value == "success"
+    assert event.outcome_detail == outcome_detail
     assert event.event_identifier_type == "UUID"
     assert event.event_identifier is None
 
     # Expected agents should be linked to event
     linked_agents = {linked_agent.agent_metadata
                      for linked_agent in event.linked_agents}
-    assert {agent.agent_name for agent in linked_agents} \
+    assert {agent.name for agent in linked_agents} \
         == expected_linked_agents
 
     for agent in linked_agents:
         assert agent.agent_type.value == "software"
-        assert agent.agent_version == file_scraper.__version__
+        assert agent.version == file_scraper.__version__
         assert agent.agent_identifier_type == "UUID"
         assert agent.agent_identifier is None
-        # TODO: currently agent_note is None for all scrapers/detectors,
+        # TODO: currently note is None for all scrapers/detectors,
         # because tools have not been defined in file-scraper!
         #
-        # assert agent.agent_note.startswith('Used tools (name-version): ')
+        # assert agent.note.startswith('Used tools (name-version): ')
 
     # Expected agent metadata should have been added also to
     # digital_object
     assert expected_linked_agents <= {
-        metadata.agent_name for metadata in file.digital_object.metadata
+        metadata.name for metadata in file.digital_object.metadata
         if isinstance(metadata, DigitalProvenanceAgentMetadata)
     }
 

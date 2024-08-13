@@ -296,23 +296,23 @@ def test_generating_structural_map_digital_provenance():
         if isinstance(metadata, DigitalProvenanceEventMetadata)
     )
     assert event.event_type == "creation"
-    assert event.event_detail == (
+    assert event.detail == (
         "Creation of structural metadata with the "
         "StructuralMap.from_directory_structure method"
     )
-    assert event.event_outcome.value == "success"
-    assert event.event_outcome_detail == (
+    assert event.outcome.value == "success"
+    assert event.outcome_detail == (
         "Created METS structural map with type 'PHYSICAL'"
     )
     assert event.event_identifier_type == "UUID"
     assert event.event_identifier is None
-    assert event.event_datetime is None
+    assert event.datetime is None
 
     # Agent
     assert len(event.linked_agents) == 1
     linked_agent = event.linked_agents[0]
     assert linked_agent.agent_role == "executing program"
-    assert linked_agent.agent_metadata.agent_name == "dpres-mets-builder"
+    assert linked_agent.agent_metadata.name == "dpres-mets-builder"
 
     agent_in_div = next(
         metadata for metadata in root_div.metadata
@@ -330,13 +330,13 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     """
     digital_object = DigitalObject(path="data/file.txt")
     custom_agent_1 = DigitalProvenanceAgentMetadata(
-        agent_name="custom_agent_1",
-        agent_version="1.0",
+        name="custom_agent_1",
+        version="1.0",
         agent_type="software"
     )
     custom_agent_2 = DigitalProvenanceAgentMetadata(
-        agent_name="custom_agent_2",
-        agent_version="1.0",
+        name="custom_agent_2",
+        version="1.0",
         agent_type="software"
     )
 
@@ -382,11 +382,11 @@ def test_add_imported_metadata_to_div():
     assert metadata in div.metadata
     event_metadata = find_metadata(div, DigitalProvenanceEventMetadata)
     assert event_metadata.event_type == 'metadata extraction'
-    assert event_metadata.event_datetime is None
-    assert event_metadata.event_detail \
+    assert event_metadata.datetime is None
+    assert event_metadata.detail \
         == "Descriptive metadata import from external source"
-    assert event_metadata.event_outcome.value == "success"
-    assert event_metadata.event_outcome_detail\
+    assert event_metadata.outcome.value == "success"
+    assert event_metadata.outcome_detail \
         == "Descriptive metadata imported to mets dmdSec from external source"
 
 
@@ -429,7 +429,7 @@ def test_metadata_deep_bundling(simple_mets):
     assert len({div for div in root_div.divs if div.div_type == "directory"}) \
         == 2
 
-    agent_names = {element.agent_name for element in root_div.metadata
+    agent_names = {element.name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
                             'ResultsMergeScraper', 'PredefinedDetector',
@@ -449,7 +449,7 @@ def test_metadata_deep_bundling(simple_mets):
     assert len({div for div in div1.divs if div.div_type == "file"}) == 1
     assert len({div for div in div1.divs if div.div_type == "directory"}) == 0
 
-    agent_names = {element.agent_name for element in div1.metadata
+    agent_names = {element.name for element in div1.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = {'CsvScraper', 'MagicTextScraper',
                             'TextEncodingMetaScraper'}
@@ -465,7 +465,7 @@ def test_metadata_deep_bundling(simple_mets):
     assert not _check_shared_metadata(div2)
     assert len({div for div in div2.divs if div.div_type == "file"}) == 1
     assert len({div for div in div2.divs if div.div_type == "directory"}) == 1
-    agent_names = {element.agent_name for element in div2.metadata
+    agent_names = {element.name for element in div2.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = set()
     assert agent_names >= expected_agent_names
@@ -480,7 +480,7 @@ def test_metadata_deep_bundling(simple_mets):
     assert not _check_shared_metadata(div3)
     assert len({div for div in div3.divs if div.div_type == "file"}) == 2
     assert len({div for div in div3.divs if div.div_type == "directory"}) == 0
-    agent_names = {element.agent_name for element in div3.metadata
+    agent_names = {element.name for element in div3.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = {'MediainfoScraper'}
     assert agent_names >= expected_agent_names
@@ -501,7 +501,7 @@ def test_metadata_bundling(simple_sip):
     assert len({div for div in root_div.divs if div.div_type == "directory"}) \
         == 0
 
-    agent_names = {element.agent_name for element in root_div.metadata
+    agent_names = {element.name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
     expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
                             'ResultsMergeScraper', 'PredefinedDetector',

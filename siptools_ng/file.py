@@ -480,9 +480,9 @@ class File:
         """Add checksum calculation event to a digital object."""
         checksum_event = DigitalProvenanceEventMetadata(
             event_type="message digest calculation",
-            event_detail="Checksum calculation for digital objects",
-            event_outcome="success",
-            event_outcome_detail=(
+            detail="Checksum calculation for digital objects",
+            outcome="success",
+            outcome_detail=(
                 "Checksum successfully calculated for digital objects."
             )
         )
@@ -500,11 +500,15 @@ class File:
         """Add metadata extraction event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="metadata extraction",
-            event_detail=("Technical metadata extraction as PREMIS metadata "
-                          "from digital objects"),
-            event_outcome="success",
-            event_outcome_detail=("PREMIS metadata successfully created "
-                                  "from extracted technical metadata."),
+            detail=(
+                "Technical metadata extraction as PREMIS metadata "
+                "from digital objects"
+            ),
+            outcome="success",
+            outcome_detail=(
+                "PREMIS metadata successfully created "
+                "from extracted technical metadata."
+            ),
         )
 
         # In addition file-scraper itself, create agent metadata representing
@@ -526,10 +530,11 @@ class File:
         """Add format identification event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="format identification",
-            event_detail="MIME type and version identification",
-            event_outcome="success",
-            event_outcome_detail=("File MIME type and format version "
-                                  "successfully identified."),
+            detail="MIME type and version identification",
+            outcome="success",
+            outcome_detail=(
+                "File MIME type and format version successfully identified."
+            ),
         )
 
         # In addition file-scraper itself, create agent metadata representing
@@ -555,10 +560,11 @@ class File:
         """Add metadata validation event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="validation",
-            event_detail="Digital object validation",
-            event_outcome="success",
-            event_outcome_detail=("Digital object(s) evaluated as "
-                                  "well-formed and valid."),
+            detail="Digital object validation",
+            outcome="success",
+            outcome_detail=(
+                "Digital object(s) evaluated as well-formed and valid."
+            ),
         )
         # In addition file-scraper itself, create agent metadata representing
         # each Scraper that was used
@@ -594,10 +600,10 @@ def _create_scraper_agents(scraper_infos):
             tools = None
         agents.append(
             DigitalProvenanceAgentMetadata(
-                agent_name=scraper_info['class'],
+                name=scraper_info['class'],
                 agent_type="software",
-                agent_version=file_scraper.__version__,
-                agent_note=tools
+                version=file_scraper.__version__,
+                note=tools
             )
         )
     return agents
