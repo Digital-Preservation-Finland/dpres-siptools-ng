@@ -39,7 +39,8 @@ def _check_shared_metadata(div: StructuralMapDiv) -> bool:
     """Check if all subdivs and digital object contain any shared metadata."""
     # Pick a child randomly to check against the other children.
     child = (div.digital_objects | div.divs).pop()
-    metadata = set(metadata for metadata in child.metadata)
+    metadata = set(metadata for metadata in child.metadata
+                   if metadata.metadata_type != MetadataType.TECHNICAL)
 
     for child in div.digital_objects | div.divs:
         if len(child.metadata & metadata) == 0:
