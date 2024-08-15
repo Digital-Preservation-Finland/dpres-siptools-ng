@@ -150,7 +150,7 @@ class SIP:
 
         tmp_digital_object_path.rename(output_filepath)
 
-    def _add_default_structural_map(self) -> None:
+    def _create_default_structural_map(self) -> None:
         """Automatically generates a default structural map based on the
         directory structure.
         """
@@ -189,7 +189,7 @@ class SIP:
                 file.generate_technical_metadata()
 
         sip = cls(mets=mets, files=files)
-        sip._add_default_structural_map()
+        sip._create_default_structural_map()
         return sip
 
     @classmethod
