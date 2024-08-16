@@ -168,8 +168,8 @@ class SIP:
     @classmethod
     def from_files(
         cls,
-        mets: mets_builder.METS,
-        files: Iterable[File]
+        files: Iterable[File],
+        mets: mets_builder.METS
     ) -> "SIP":
         """Generate a complete SIP object from a list of File instances.
 
