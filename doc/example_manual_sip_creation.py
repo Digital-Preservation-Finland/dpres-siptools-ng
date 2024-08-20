@@ -1,9 +1,9 @@
 """Example code for manual SIP creation."""
 from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
+from mets_builder.metadata import ImportedMetadata
 
-from siptools_ng.sip import SIP
 from siptools_ng.file import File
-
+from siptools_ng.sip import SIP
 
 # A part of using dpres-siptools-ng is to create a METS object using
 # dpres-mets-builder in tandem with some helper utilities provided by
@@ -35,11 +35,20 @@ file3 = File(
     digital_object_path="data/text_files/file2.txt"
 )
 
-# Make a custom structural map div using the digital objects in files
-root_div = StructuralMapDiv("custom_div",
-                            digital_objects=[file1.digital_object,
-                                             file2.digital_object,
-                                             file3.digital_object])
+# Import descriptive metadata from an XML source
+descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
+
+# Make a custom structural map div using the digital objects in files and
+# descriptive metadata
+root_div = StructuralMapDiv(
+    "custom_div",
+    digital_objects=[
+        file1.digital_object,
+        file2.digital_object,
+        file3.digital_object
+    ],
+    metadata=[descriptive_md]
+)
 
 # Add the custom div to a structural map
 structural_map = StructuralMap(root_div=root_div)

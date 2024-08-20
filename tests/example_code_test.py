@@ -61,6 +61,4 @@ def test_example_automated_sip_creation(example_code, output_file,
         ],
         check=False, capture_output=True
     )
-    # FIXME: dmdSec is required per national METS schema. For now, don't run
-    # the Schematron check which fails this check
-    # assert result.returncode == 0
+    assert result.returncode == 0
