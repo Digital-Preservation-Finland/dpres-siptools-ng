@@ -164,12 +164,16 @@ class SIP:
             )
             self.mets.add_structural_map(structural_map)
             self.mets.generate_file_references()
+            return structural_map
 
     @classmethod
     def from_files(
         cls,
         files: Iterable[File],
-        mets: mets_builder.METS
+        mets: mets_builder.METS,
+        *,  # Following arguments have to be provided as keyword args
+        metadata_xml_paths: Optional[Iterable[Union[str, Path]]] = None,
+        metadata_xml_strings: Iterable[bytes] = None
     ) -> "SIP":
         """Generate a complete SIP object from a list of File instances.
 
@@ -181,22 +185,50 @@ class SIP:
                      with additional entries (structural map, agents, events).
         :param files: File instances. Technical metadata is automatically
                       generated for those that don't already have it.
+        :param metadata_xml_paths: External XML files to import and include
+            in the METS as descriptive metadata. Will be attached to the root
+            of the automatically generated structural map.
+        :param metadata_xml_strings: XML documents to include in the METS
+            as descriptive metadata. Will be attached to the root of the
+            automatically generated structural map.
 
         :returns: SIP object initialized according to the given files
         """
+        if not metadata_xml_paths:
+            metadata_xml_paths = []
+
+        if not metadata_xml_strings:
+            metadata_xml_strings = []
+
         for file in files:
             if not file._technical_metadata_generated:
                 file.generate_technical_metadata()
 
+        dmds = []
+
+        for path in metadata_xml_paths:
+            dmds.append(ImportedMetadata.from_path(path))
+
+        for string in metadata_xml_strings:
+            dmds.append(ImportedMetadata.from_string(string))
+
         sip = cls(mets=mets, files=files)
-        sip._create_default_structural_map()
+        struct_map = sip._create_default_structural_map()
+
+        if struct_map:
+            for dmd in dmds:
+                _add_metadata(struct_map.root_div, dmd)
+
         return sip
 
     @classmethod
     def from_directory(
         cls,
         directory_path: Union[Path, str],
-        mets: mets_builder.METS
+        mets: mets_builder.METS,
+        *,  # Following arguments have to be provided as keyword args
+        metadata_xml_paths: Optional[Iterable[Union[str, Path]]] = None,
+        metadata_xml_strings: Iterable[bytes] = None
     ) -> "SIP":
         """Generate a SIP object according to the contents of a directory.
 
@@ -237,7 +269,11 @@ class SIP:
 
         # Pass the generated File instances to `SIP.from_files`, which
         # will handle rest of the automatic SIP creation.
-        return cls.from_files(mets=mets, files=files)
+        return cls.from_files(
+            mets=mets, files=files,
+            metadata_xml_paths=metadata_xml_paths,
+            metadata_xml_strings=metadata_xml_strings
+        )
 
 
 def _structural_map_from_directory_structure(

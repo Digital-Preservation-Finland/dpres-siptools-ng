@@ -1,23 +1,23 @@
 """Test SIPs."""
 import hashlib
 import tarfile
+from pathlib import Path
+
 import lxml
 import pytest
-
-import siptools_ng.agent
-
-from siptools_ng.file import File
-from siptools_ng.sip import (SIP,
-                             _structural_map_from_directory_structure,
-                             _add_metadata)
 from mets_builder import METS, MetsProfile
 from mets_builder.digital_object import DigitalObject
-from mets_builder.structural_map import StructuralMapDiv
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
                                    ImportedMetadata, MetadataFormat,
                                    MetadataType)
+from mets_builder.structural_map import StructuralMapDiv
 from utils import find_metadata
+
+import siptools_ng.agent
+from siptools_ng.file import File
+from siptools_ng.sip import (SIP, _add_metadata,
+                             _structural_map_from_directory_structure)
 
 
 def _extract_sip(digital_object_path, extract_filepath):
@@ -515,3 +515,76 @@ def test_metadata_bundling(simple_sip):
     expected_event_types = {'format identification',
                             'message digest calculation', 'creation'}
     assert event_types >= expected_event_types
+
+
+@pytest.mark.parametrize(
+    "method_name,kwargs",
+    (
+        (
+            "from_files",
+            {
+                "metadata_xml_paths": ["tests/data/valid_ead3.xml"]
+            }
+        ),
+        (
+            "from_files",
+            {
+                "metadata_xml_strings": [
+                    Path("tests/data/valid_ead3.xml").read_bytes()
+                ]
+            }
+        ),
+        (
+            "from_directory",
+            {
+                "metadata_xml_paths": ["tests/data/valid_ead3.xml"]
+            }
+        ),
+        (
+            "from_directory",
+            {
+                "metadata_xml_strings": [
+                    Path("tests/data/valid_ead3.xml").read_bytes()
+                ]
+            }
+        )
+    )
+)
+def test_xml_metadata_import_to_struct_map(
+        simple_mets, files, method_name, kwargs):
+    """
+    Test that XML metadata given to `SIP.from_directory` is
+    automatically detected, imported and linked to the root of the
+    automatically generated structural map
+    """
+    kwargs = kwargs.copy()
+
+    kwargs["mets"] = simple_mets
+    if method_name == "from_files":
+        sip_factory_method = SIP.from_files
+
+        kwargs["files"] = files
+    elif method_name == "from_directory":
+        sip_factory_method = SIP.from_directory
+
+        kwargs["directory_path"] = "tests/data/generate_sip_from_directory/data"
+
+    sip = sip_factory_method(**kwargs)
+    mets = sip.mets
+
+    assert len(mets.structural_maps) == 1
+    struct_map = list(mets.structural_maps)[0]
+
+    imported_metadata = next(
+        metadata for metadata in struct_map.root_div.metadata
+        if isinstance(metadata, ImportedMetadata)
+    )
+
+    assert imported_metadata.is_descriptive
+    assert imported_metadata.other_format == "EAD3"
+
+    if "metadata_xml_strings" in kwargs:
+        assert b"<ead " in imported_metadata.data_string
+    else:
+        assert imported_metadata.data_path == \
+            Path(kwargs["metadata_xml_paths"][0]).resolve()

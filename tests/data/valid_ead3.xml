@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ead xmlns="http://ead3.archivists.org/schema/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ead3.archivists.org/schema http://www.loc.gov/ead/ead3.xsd">
+  <control>
+    <recordid>foo</recordid>
+    <filedesc>
+      <titlestmt>
+        <titleproper>Proper title</titleproper>
+      </titlestmt>
+    </filedesc>
+    <maintenancestatus value="new"></maintenancestatus>
+    <maintenanceagency>
+      <agencyname>Julkaisija</agencyname>
+      </maintenanceagency>
+    <maintenancehistory>
+      <maintenanceevent>
+        <eventtype value="created"></eventtype>
+        <eventdatetime standarddatetime="2024-01-01"></eventdatetime>
+        <agenttype value="human">
+        </agenttype>
+        <agent encodinganalog="i dunno">
+        </agent>
+      </maintenanceevent>
+    </maintenancehistory>
+  </control>
+  <archdesc level="fonds">
+    <did>
+      <langmaterial>
+        <language langcode="eng">English/</language>
+      </langmaterial>
+    </did>
+  </archdesc>
+</ead>
