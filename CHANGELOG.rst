@@ -11,8 +11,8 @@ Added
 ^^^^^
 - Automatic creation of PREMIS events when adding imported metadata to structural map
 - Ability to create structural maps from directory structures
-- Create a structural map automatically from directory structure when creating SIPs using ``SIP.from_directory``` or ``SIP.from_files``
-- ```siptools_ng.sip.structural_map_from_directory_structure``` will now avoid creating unnecessary metadata references by linking shared metadata entries to the directory div instead of to each file individually
+- Create a structural map automatically from directory structure when creating SIPs using ``SIP.from_directory`` or ``SIP.from_files``
+- ``siptools_ng.sip.structural_map_from_directory_structure`` will now avoid creating unnecessary metadata references by linking shared metadata entries to the directory div instead of to each file individually
 - Allow automatically importing external XML metadata to SIP using ``metadata_xml_paths`` and ``metadata_xml_strings`` kwargs in ``SIP.from_directory`` and ``SIP.from_files``
 
 Changed
