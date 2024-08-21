@@ -271,7 +271,8 @@ class File:
         format_registry_key: Optional[str] = None,
         creating_application: Optional[str] = None,
         creating_application_version: Optional[str] = None,
-    ) -> None:
+        scraper_result: Optional[dict] = None,
+    ) -> dict:
         """Generate technical metadata for this digital object.
 
         Scrapes the file found in File.path,
@@ -364,6 +365,13 @@ class File:
             with creating application version. Version of the software
             that was used to create this file. When set,
             creating_application has to be set as well.
+        :param scraper_result: Scraper result to use with this file. When not
+            set a new scraper result will be computed.
+
+        :returns: Dictionary containing scraper result data.
+            This value can be passed to :meth:`File.with_scraper_result`
+            to generate the same metadata without having to scrape the
+            file again.
         """
         if self._technical_metadata_generated:
             raise MetadataGenerationError(
@@ -395,30 +403,39 @@ class File:
         if csv_has_header is not None:
             self._csv_has_header = csv_has_header
 
-        scraper = file_scraper.scraper.Scraper(
-            filename=str(self.path),
-            mimetype=file_format,
-            version=file_format_version,
-            charset=charset,
-            delimiter=csv_delimiter,
-            separator=csv_record_separator,
-            quotechar=csv_quoting_character,
-        )
-        scraper.scrape(check_wellformed=False)
+        if not scraper_result:
+            scraper = file_scraper.scraper.Scraper(
+                filename=str(self.path),
+                mimetype=file_format,
+                version=file_format_version,
+                charset=charset,
+                delimiter=csv_delimiter,
+                separator=csv_record_separator,
+                quotechar=csv_quoting_character,
+            )
+            scraper.scrape(check_wellformed=False)
 
-        stream = scraper.streams[0]
+            scraper_result = {
+                "streams": scraper.streams,
+                "info": scraper.info,
+                "mimetype": scraper.mimetype,
+                "version": scraper.version,
+                "checksum": scraper.checksum(algorithm="MD5"),
+                "grade": scraper.grade()
+            }
 
         # Create PREMIS metadata for file
         file_metadata = mets_builder.metadata.TechnicalFileObjectMetadata(
-            file_format=scraper.mimetype,
-            file_format_version=scraper.version,
+            file_format=scraper_result["mimetype"],
+            file_format_version=scraper_result["version"],
             checksum_algorithm=checksum_algorithm or "MD5",
-            checksum=checksum or scraper.checksum(algorithm="MD5"),
+            checksum=checksum or scraper_result["checksum"],
             file_created_date=file_created_date
             or _file_creation_date(self.path),
             object_identifier_type=object_identifier_type,
             object_identifier=object_identifier,
-            charset=charset or stream.get("charset", None),
+            charset=charset or
+            scraper_result["streams"][0].get("charset", None),
             original_name=original_name or self.path.name,
             format_registry_name=format_registry_name,
             format_registry_key=format_registry_key,
@@ -429,12 +446,14 @@ class File:
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
-        characteristics = self._create_technical_characteristics(stream)
+        characteristics = self._create_technical_characteristics(
+            scraper_result["streams"][0]
+        )
         if characteristics:
             self.digital_object.add_metadata([characteristics])
 
         # Create metadata for the streams of a given file
-        for i, stream in enumerate(scraper.streams.values()):
+        for i, stream in enumerate(scraper_result["streams"].values()):
             if i == 0:
                 # Skip the container itself
                 continue
@@ -467,14 +486,16 @@ class File:
         if not checksum:
             self._add_checksum_calculation_event()
         if not file_format:
-            self._add_format_identification_event(scraper)
-        self._add_metadata_extraction_event(scraper)
+            self._add_format_identification_event(scraper_result)
+        self._add_metadata_extraction_event(scraper_result)
 
         # If file-scraper detects the file as "bit-level file" (for
         # example SEG-Y), set the use attribute accordingly.
-        self.digital_object.use = USE.get(scraper.grade())
+        self.digital_object.use = USE.get(scraper_result["grade"])
 
         self._technical_metadata_generated = True
+
+        return scraper_result
 
     def _add_checksum_calculation_event(self):
         """Add checksum calculation event to a digital object."""
@@ -495,7 +516,7 @@ class File:
 
         self.digital_object.add_metadata([checksum_event, file_scraper_agent])
 
-    def _add_metadata_extraction_event(self, scraper):
+    def _add_metadata_extraction_event(self, scraper_result):
         """Add metadata extraction event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="metadata extraction",
@@ -513,7 +534,7 @@ class File:
         # In addition file-scraper itself, create agent metadata representing
         # each Scraper that was used
         scraper_infos = [
-            scraper_info for scraper_info in scraper.info.values()
+            scraper_info for scraper_info in scraper_result["info"].values()
             if scraper_info['class'].endswith("Scraper")
         ]
         agents = [siptools_ng.agent.get_file_scraper_agent()] \
@@ -525,7 +546,7 @@ class File:
             )
         self.digital_object.add_metadata([event])
 
-    def _add_format_identification_event(self, scraper):
+    def _add_format_identification_event(self, scraper_result):
         """Add format identification event to a digital object."""
         event = DigitalProvenanceEventMetadata(
             event_type="format identification",
@@ -539,7 +560,7 @@ class File:
         # In addition file-scraper itself, create agent metadata representing
         # each Detector that was used
         detector_infos = [
-            scraper_info for scraper_info in scraper.info.values()
+            scraper_info for scraper_info in scraper_result["info"].values()
             if scraper_info['class'].endswith("Detector")
         ]
         agents = [siptools_ng.agent.get_file_scraper_agent()] \
@@ -580,6 +601,45 @@ class File:
             )
 
         self.add_metadata([event])
+
+    @classmethod
+    def with_scraper_result(
+        cls,
+        path: Union[str, Path],
+        digital_object_path: Union[str, Path],
+        scraper_result: dict,
+        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (None),
+        identifier: Optional[str] = None,
+        *args,
+        **kwargs
+    ) -> None:
+        """Constructor for File using previously scraped metadata.
+
+        :param path: File path of the local source file for this
+            digital object. Symbolic links in the path are resolved.
+        :param digital_object_path: File path of this digital object in the
+            SIP, relative to the SIP root directory. Note that this can be
+            different than the path in the local filesystem.
+        :param metadata: Iterable of metadata objects that describe this
+            file. Note that the metadata should be administrative metadata,
+            and any descriptive metadata of a digital object should be added to
+            a div in a structural map.
+        :param identifier: Identifier for the digital object. The
+            identifier must be unique in the METS document. If None, the
+            identifier is generated automatically.
+        :param scraper_result: Previously scraped metadata as
+            returned by :meth:`File.generate_technical_metadata`.
+        """
+        file = cls(
+            path=path,
+            digital_object_path=digital_object_path,
+            metadata=metadata,
+            identifier=identifier,
+            *args,
+            **kwargs
+        )
+        file.generate_technical_metadata(scraper_result=scraper_result)
+        return file
 
 
 def _create_scraper_agents(scraper_infos):

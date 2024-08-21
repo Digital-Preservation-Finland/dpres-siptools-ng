@@ -636,3 +636,35 @@ def test_skip_event(kwargs, expected_event_types):
         if isinstance(metadata, DigitalProvenanceEventMetadata)
     }
     assert event_types == expected_event_types
+
+
+def test_previously_scraped_data():
+    """Test that previously scraped data can be passed to File."""
+    scraper = file_scraper.scraper.Scraper(
+        filename="tests/data/test_file.txt",
+    )
+    scraper.scrape(check_wellformed=False)
+
+    scraper_result = {
+        "streams": scraper.streams,
+        "info": scraper.info,
+        "mimetype": "test_mimetype",
+        "version": "test_version",
+        "checksum": "test_checksum",
+        "grade": scraper.grade()
+    }
+
+    file = File.with_scraper_result(
+        path="tests/data/test_file.txt",
+        digital_object_path="sip_data/test_file.txt",
+        scraper_result=scraper_result
+    )
+
+    technical_metadata = next(
+        metadata for metadata in file.digital_object.metadata
+        if isinstance(metadata, TechnicalFileObjectMetadata)
+    )
+
+    assert technical_metadata.file_format == "test_mimetype"
+    assert technical_metadata.file_format_version == "test_version"
+    assert technical_metadata.checksum == "test_checksum"
