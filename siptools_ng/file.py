@@ -425,13 +425,13 @@ class File:
             creating_application=creating_application,
             creating_application_version=creating_application_version
         )
-        self.digital_object.add_metadata(file_metadata)
+        self.digital_object.add_metadata([file_metadata])
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
         characteristics = self._create_technical_characteristics(stream)
         if characteristics:
-            self.digital_object.add_metadata(characteristics)
+            self.digital_object.add_metadata([characteristics])
 
         # Create metadata for the streams of a given file
         for i, stream in enumerate(scraper.streams.values()):
@@ -459,9 +459,9 @@ class File:
             # Generate stream format specific metadata if applicable
             characteristics = self._create_technical_characteristics(stream)
             if characteristics:
-                digital_object_stream.add_metadata(characteristics)
+                digital_object_stream.add_metadata([characteristics])
 
-            self.digital_object.add_stream(digital_object_stream)
+            self.digital_object.add_streams([digital_object_stream])
 
         # Document file scraping
         if not checksum:
@@ -493,8 +493,7 @@ class File:
             agent_role="executing program"
         )
 
-        self.digital_object.add_metadata(checksum_event)
-        self.digital_object.add_metadata(file_scraper_agent)
+        self.digital_object.add_metadata([checksum_event, file_scraper_agent])
 
     def _add_metadata_extraction_event(self, scraper):
         """Add metadata extraction event to a digital object."""
@@ -524,7 +523,7 @@ class File:
                 agent_metadata=agent,
                 agent_role="executing program"
             )
-        self.digital_object.add_metadata(event)
+        self.digital_object.add_metadata([event])
 
     def _add_format_identification_event(self, scraper):
         """Add format identification event to a digital object."""
@@ -552,7 +551,7 @@ class File:
                 agent_role="executing program"
             )
 
-        self.digital_object.add_metadata(event)
+        self.digital_object.add_metadata([event])
 
     # TODO: siptools-ng currently does not validate digital objects, so
     # this method is unused.
@@ -580,7 +579,7 @@ class File:
                 agent_role="executing program"
             )
 
-        self.add_metadata(event)
+        self.add_metadata([event])
 
 
 def _create_scraper_agents(scraper_infos):

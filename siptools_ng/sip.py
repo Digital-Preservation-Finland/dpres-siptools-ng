@@ -162,7 +162,7 @@ class SIP:
                 digital_objects=digital_objects,
                 additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
             )
-            self.mets.add_structural_map(structural_map)
+            self.mets.add_structural_maps([structural_map])
             self.mets.generate_file_references()
             return structural_map
 
@@ -216,8 +216,7 @@ class SIP:
         struct_map = sip._create_default_structural_map()
 
         if struct_map:
-            for dmd in dmds:
-                _add_metadata(struct_map.root_div, dmd)
+            _add_metadata(struct_map.root_div, dmds)
 
         return sip
 
@@ -430,13 +429,13 @@ def _add_digital_provenance_for_structural_map_creation(
             agent_role="executing program"
         )
 
-    for metadata in [event, mets_builder_agent] + additional_agents:
-        _add_metadata(structural_map.root_div, metadata)
+    _add_metadata(structural_map.root_div,
+                  [event, mets_builder_agent] + additional_agents)
 
 
 def _add_metadata(div: StructuralMapDiv,
-                  metadata: Metadata):
-    """Add metadata to a given div.
+                  metadata: Iterable[Metadata]):
+    """Add an iterable of metadata to a given div.
 
     The metadata should apply to all digital objects under this div (as
     well as digital objects under the divs nested in this div)
@@ -446,17 +445,18 @@ def _add_metadata(div: StructuralMapDiv,
 
     :param div: The div that the metadata object is added to.
 
-    :param metadata: The metadata object that is added.
+    :param metadata: The iterable of metadata objects that is added.
     """
-    if isinstance(metadata, ImportedMetadata):
-        event = DigitalProvenanceEventMetadata(
-            event_type="metadata extraction",
-            detail="Descriptive metadata import from external source",
-            outcome="success",
-            outcome_detail=(
-                "Descriptive metadata imported to "
-                "mets dmdSec from external source"
+    for metadata_element in metadata:
+        if isinstance(metadata_element, ImportedMetadata):
+            event = DigitalProvenanceEventMetadata(
+                event_type="metadata extraction",
+                detail="Descriptive metadata import from external source",
+                outcome="success",
+                outcome_detail=(
+                    "Descriptive metadata imported to "
+                    "mets dmdSec from external source"
+                )
             )
-        )
-        div.add_metadata(event)
+            div.add_metadata([event])
     div.add_metadata(metadata)

@@ -376,7 +376,7 @@ def test_add_imported_metadata_to_div():
         format_version="1.0",
         data_path="tests/data/imported_metadata.xml"
     )
-    _add_metadata(div, metadata)
+    _add_metadata(div, [metadata])
     # In addtition to the added metadata, the div should contain event metadata
     assert len(div.metadata) == 2
     assert metadata in div.metadata

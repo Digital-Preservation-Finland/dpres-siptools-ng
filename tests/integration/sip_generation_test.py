@@ -54,7 +54,7 @@ def test_file_location_in_sip(tmp_path):
         digital_objects.append(file.digital_object)
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_map(structural_map)
+    mets.add_structural_maps([structural_map])
     mets.generate_file_references()
 
     sip = SIP(mets=mets, files=files)
@@ -92,7 +92,7 @@ def test_stream_relationships_in_sip_mets(tmp_path):
     root_div = StructuralMapDiv("test_div",
                                 digital_objects=[file.digital_object])
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_map(structural_map)
+    mets.add_structural_maps([structural_map])
     mets.generate_file_references()
 
     xml = mets.to_xml()
@@ -204,7 +204,7 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
 
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_map(structural_map)
+    mets.add_structural_maps([structural_map])
     mets.generate_file_references()
 
     xml = mets.to_xml()

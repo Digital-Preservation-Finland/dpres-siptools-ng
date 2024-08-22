@@ -40,7 +40,7 @@ def simple_sip(simple_mets, files):
         digital_objects.append(file.digital_object)
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
-    simple_mets.add_structural_map(structural_map)
+    simple_mets.add_structural_maps([structural_map])
     simple_mets.generate_file_references()
     return SIP.from_files(mets=simple_mets, files=files)
 

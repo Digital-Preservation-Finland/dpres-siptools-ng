@@ -54,7 +54,7 @@ root_div = StructuralMapDiv(
 structural_map = StructuralMap(root_div=root_div)
 
 # Add the custom structural map to METS and generate file references
-mets.add_structural_map(structural_map)
+mets.add_structural_maps([structural_map])
 mets.generate_file_references()
 
 # Make a SIP using the previously created file and METS. In addition to the
