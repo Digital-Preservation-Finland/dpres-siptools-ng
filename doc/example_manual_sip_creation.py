@@ -1,6 +1,14 @@
 """Example code for manual SIP creation."""
-from mets_builder import METS, MetsProfile, StructuralMap, StructuralMapDiv
-from mets_builder.metadata import ImportedMetadata
+from mets_builder import (
+    METS,
+    MetsProfile,
+    StructuralMap,
+    StructuralMapDiv,
+)
+from mets_builder.metadata import (
+    DigitalProvenanceEventMetadata,
+    ImportedMetadata,
+)
 
 from siptools_ng.file import File
 from siptools_ng.sip import SIP
@@ -35,11 +43,22 @@ file3 = File(
     digital_object_path="data/text_files/file2.txt"
 )
 
-# Import descriptive metadata from an XML source
-descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
+# Create provenance metadata and add it to some files
+provenance_md = DigitalProvenanceEventMetadata(
+        event_type="creation",
+        detail="This is a detail",
+        outcome="success",
+        outcome_detail="Another detail",
+    )
+file1.add_metadata(provenance_md)
 
-# Make a custom structural map div using the digital objects in files and
-# descriptive metadata
+# Import descriptive metadata from an XML source, and add it to some
+# files
+descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
+file2.add_metadata(descriptive_md)
+file3.add_metadata(descriptive_md)
+
+# Make a custom structural map div using the digital objects in files
 root_div = StructuralMapDiv(
     "custom_div",
     digital_objects=[
@@ -47,7 +66,6 @@ root_div = StructuralMapDiv(
         file2.digital_object,
         file3.digital_object
     ],
-    metadata=[descriptive_md]
 )
 
 # Add the custom div to a structural map
