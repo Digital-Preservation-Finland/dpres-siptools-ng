@@ -43,20 +43,21 @@ file3 = File(
     digital_object_path="data/text_files/file2.txt"
 )
 
-# Create provenance metadata and add it to some files
+# Create provenance metadata
 provenance_md = DigitalProvenanceEventMetadata(
         event_type="creation",
         detail="This is a detail",
         outcome="success",
         outcome_detail="Another detail",
     )
-file1.add_metadata(provenance_md)
 
-# Import descriptive metadata from an XML source, and add it to some
-# files
+# Import descriptive metadata from an XML source
 descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
-file2.add_metadata(descriptive_md)
-file3.add_metadata(descriptive_md)
+
+# Add metadata to files
+file1.add_metadata([provenance_md])
+file2.add_metadata([provenance_md, descriptive_md])
+file3.add_metadata([descriptive_md])
 
 # Make a custom structural map div using the digital objects in files
 root_div = StructuralMapDiv(

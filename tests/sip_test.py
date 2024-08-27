@@ -9,15 +9,16 @@ from mets_builder import METS, MetsProfile
 from mets_builder.digital_object import DigitalObject
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   ImportedMetadata, MetadataFormat,
+                                   ImportedMetadata,
+                                   Metadata,
+                                   MetadataFormat,
                                    MetadataType)
 from mets_builder.structural_map import StructuralMapDiv
 from utils import find_metadata
 
 import siptools_ng.agent
 from siptools_ng.file import File
-from siptools_ng.sip import (SIP, _add_metadata,
-                             _structural_map_from_directory_structure)
+from siptools_ng.sip import SIP, _structural_map_from_directory_structure
 
 
 def _extract_sip(digital_object_path, extract_filepath):
@@ -49,15 +50,9 @@ def _check_shared_metadata(div: StructuralMapDiv) -> bool:
     return True
 
 
-def test_creating_sip_with_zero_files():
+def test_creating_sip_with_zero_files(simple_mets):
     """Test that creating a SIP with zero files results in error."""
-    mets = METS(
-        mets_profile=MetsProfile.CULTURAL_HERITAGE,
-        contract_id="contract_id",
-        creator_name="Mr. Foo",
-        creator_type="INDIVIDUAL"
-    )
-    sip = SIP(mets=mets, files=[])
+    sip = SIP(mets=simple_mets, files=[])
 
     with pytest.raises(ValueError) as error:
         sip.finalize(
@@ -204,12 +199,15 @@ def test_generating_structural_map_from_directory():
 
     The root div should be an additional wrapping div with type 'directory'.
     """
-    do1 = DigitalObject(path="data/a/file1.txt")
-    do2 = DigitalObject(path="data/a/file2.txt")
-    do3 = DigitalObject(path="data/b/very/long/chain/file3.txt")
-    digital_objects = (do1, do2, do3)
+    file1 = File(path="tests/data/test_file.txt",
+                 digital_object_path="data/a/file1.txt")
+    file2 = File(path="tests/data/test_file.txt",
+                 digital_object_path="data/a/file2.txt")
+    file3 = File(path="tests/data/test_file.txt",
+                 digital_object_path="data/b/very/long/chain/file3.txt")
+    files = (file1, file2, file3)
 
-    structural_map = _structural_map_from_directory_structure(digital_objects)
+    structural_map = _structural_map_from_directory_structure(files)
 
     assert structural_map.structural_map_type == 'PHYSICAL'
 
@@ -234,11 +232,11 @@ def test_generating_structural_map_from_directory():
 
     # the file divs of directory "a" contain the corresponding digital objects.
     file1_div = next(div for div in a_div.divs if div.label == "file1.txt")
-    assert file1_div.digital_objects == {do1}
+    assert file1_div.digital_objects == {file1.digital_object}
     assert file1_div.div_type == "file"
 
     file2_div = next(div for div in a_div.divs if div.label == "file2.txt")
-    assert file2_div.digital_objects == {do2}
+    assert file2_div.digital_objects == {file2.digital_object}
     assert file2_div.div_type == "file"
 
     # directory "b" in "data" has a deep directory structure, at the bottom of
@@ -260,7 +258,7 @@ def test_generating_structural_map_from_directory():
     assert len(chain_div.divs) == 1
 
     file3_div = next(div for div in chain_div.divs if div.label == "file3.txt")
-    assert file3_div.digital_objects == {do3}
+    assert file3_div.digital_objects == {file3.digital_object}
     assert file3_div.div_type == "file"
 
 
@@ -271,7 +269,7 @@ def test_generating_structural_map_with_no_digital_objects():
     with pytest.raises(ValueError) as error:
         _structural_map_from_directory_structure([])
     assert str(error.value) == (
-        "Given 'digital_objects' is empty. Structural map can not be "
+        "Given 'files' is empty. Structural map can not be "
         "generated with zero digital objects."
     )
 
@@ -284,8 +282,9 @@ def test_generating_structural_map_digital_provenance():
     been added to the root div of the generated structural map. The agent
     should also be linked to the event as the executing program.
     """
-    digital_object = DigitalObject(path="data/file.txt")
-    structural_map = _structural_map_from_directory_structure([digital_object])
+    file = File(path="tests/data/test_file.txt",
+                digital_object_path="data/file.txt")
+    structural_map = _structural_map_from_directory_structure([file])
 
     root_div = structural_map.root_div
     assert len(root_div.metadata) == 2
@@ -328,7 +327,8 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     structural map. The agents should also be linked to the structmap creation
     event as executing programs.
     """
-    digital_object = DigitalObject(path="data/file.txt")
+    file = File(path="tests/data/test_file.txt",
+                digital_object_path="data/file.txt")
     custom_agent_1 = DigitalProvenanceAgentMetadata(
         name="custom_agent_1",
         version="1.0",
@@ -341,7 +341,7 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     )
 
     structural_map = _structural_map_from_directory_structure(
-        [digital_object],
+        [file],
         additional_agents=[custom_agent_1, custom_agent_2]
     )
 
@@ -361,13 +361,72 @@ def test_generating_structural_map_digital_provenance_with_custom_agents():
     assert custom_agent_2 in linked_agents
 
 
-def test_add_imported_metadata_to_div():
-    """Test adding imported metadata to a structural map division.
+class DummyMetadata(Metadata):
+    """Dummy digital provenance metadata."""
 
-    Metadata import event should be added to div.
+    def __init__(self, identifier):
+        """Init dummy metadata."""
+        super().__init__(
+            metadata_format="OTHER",
+            other_format="dummy format",
+            metadata_type="digital provenance",
+            format_version=None,
+            identifier=identifier
+        )
+
+    def _to_xml_element_tree():
+        """Do nothing."""
+
+
+class DummyDescriptiveMetadata(Metadata):
+    """Dummy digital provenance metadata."""
+
+    def __init__(self, identifier):
+        """Init dummy metadata."""
+        super().__init__(
+            metadata_format="OTHER",
+            other_format="dummy format",
+            metadata_type="descriptive",
+            format_version=None,
+            identifier=identifier
+        )
+
+    def _to_xml_element_tree():
+        """Do nothing."""
+
+
+@pytest.mark.parametrize(
+    "metadata_class",
+    [DummyMetadata, DummyDescriptiveMetadata]
+)
+def test_add_metadata_to_sip(simple_sip, metadata_class):
+    """Test adding metadata to SIP.
+
+    Metadata should be added to root div of default structural map.
     """
-    div = StructuralMapDiv(div_type="test_type")
-    assert div.metadata == set()
+    simple_sip.add_metadata([metadata_class('test-id')])
+    added_md = find_metadata(simple_sip.default_struct_map.root_div,
+                             metadata_class)
+    assert added_md.identifier == "test-id"
+
+    # Metada import event should not be generated
+    events = [md for md in simple_sip.default_struct_map.root_div.metadata
+              if isinstance(md, DigitalProvenanceEventMetadata)]
+    for event in events:
+        assert event.event_type != "metadata extraction"
+
+
+def test_add_imported_metadata_to_sip(simple_mets):
+    """Test adding imported metadata to SIP.
+
+    Metadata import event should be added to sip.
+    """
+    # TODO: Is this file required? Could empty SIP work?
+    file = File(path="tests/data/test_file.txt",
+                digital_object_path="test_file.txt")
+    sip=SIP.from_files(mets=simple_mets, files=[file])
+
+    div = sip.default_struct_map.root_div
 
     metadata = ImportedMetadata(
         metadata_type=MetadataType.DESCRIPTIVE,
@@ -376,18 +435,99 @@ def test_add_imported_metadata_to_div():
         format_version="1.0",
         data_path="tests/data/imported_metadata.xml"
     )
-    _add_metadata(div, [metadata])
-    # In addtition to the added metadata, the div should contain event metadata
-    assert len(div.metadata) == 2
+    sip.add_metadata([metadata])
     assert metadata in div.metadata
-    event_metadata = find_metadata(div, DigitalProvenanceEventMetadata)
-    assert event_metadata.event_type == 'metadata extraction'
-    assert event_metadata.datetime is None
-    assert event_metadata.detail \
+    # In addtition to the added metadata, the div should contain event metadata
+    events = [md for md in div.metadata
+              if isinstance(md, DigitalProvenanceEventMetadata)]
+    metadata_import_events = [
+        event for event in events
+        if event.detail == "Descriptive metadata import from external source"
+    ]
+    assert len(metadata_import_events) == 1
+    assert metadata_import_events[0].event_type == 'metadata extraction'
+    assert metadata_import_events[0].datetime is None
+    assert metadata_import_events[0].detail \
         == "Descriptive metadata import from external source"
-    assert event_metadata.outcome.value == "success"
-    assert event_metadata.outcome_detail \
+    assert metadata_import_events[0].outcome.value == "success"
+    assert metadata_import_events[0].outcome_detail \
         == "Descriptive metadata imported to mets dmdSec from external source"
+
+
+def test_add_descriptive_metadata_to_file(simple_mets):
+    """Test adding a file with descriptive metadata.
+
+    If a file contains descriptive metadata, the descriptive metadata
+    should be inserted to default structural map.
+    """
+    descriptive_md = DummyDescriptiveMetadata(identifier="test-id")
+
+    file_with_metadata = File(path="tests/data/test_file.txt",
+                              digital_object_path='with_md')
+    file_with_metadata.add_metadata([descriptive_md])
+    file_without_metadata = File(path="tests/data/test_file.txt",
+                                 digital_object_path='without_md')
+    sip = SIP.from_files(
+        mets=simple_mets,
+        files=[file_with_metadata, file_without_metadata]
+    )
+
+    # Root div should contain one div for each file. One of the divs
+    # should contain descriptive metadata, the other should not.
+    divs = list(sip.default_struct_map.root_div.divs)
+    assert len(divs) == 2
+    for div in divs:
+        if div.label == "with_md":
+            assert descriptive_md in div.metadata
+            # The div should not contain any other metadata
+            assert len(div.metadata) == 1
+        elif div.label == "without_md":
+            assert not div.metadata
+        else:
+            raise ValueError("Unexpected label")
+
+
+def test_add_imported_metadata_to_file(simple_mets):
+    """Test adding a file with imported metadata.
+
+    Metadata import event should be added to div of file in default
+    structural map.
+    """
+    imported_md = ImportedMetadata(
+        metadata_type=MetadataType.DESCRIPTIVE,
+        metadata_format=MetadataFormat.OTHER,
+        other_format="PAS-special",
+        format_version="1.0",
+        data_path="tests/data/imported_metadata.xml"
+    )
+
+    file_with_metadata = File(path="tests/data/test_file.txt",
+                              digital_object_path='with_md')
+    file_with_metadata.add_metadata([imported_md])
+    file_without_metadata = File(path="tests/data/test_file.txt",
+                                 digital_object_path='without_md')
+    sip = SIP.from_files(
+        mets=simple_mets,
+        files=[file_with_metadata, file_without_metadata]
+    )
+
+    # Root div should contain one div for each file. One of the divs
+    # should contain descriptive metadata and PREMIS event that
+    # describes metadata import. The other div should not contain any
+    # metadata.
+    divs = list(sip.default_struct_map.root_div.divs)
+    assert len(divs) == 2
+    for div in divs:
+        if div.label == "with_md":
+            assert len(div.metadata) == 2
+            assert imported_md in div.metadata
+            event = next(iter(div.metadata - {imported_md}))
+            assert event.detail \
+                == "Descriptive metadata import from external source"
+        elif div.label == "without_md":
+            assert not div.metadata
+        else:
+            raise ValueError("Unexpected label")
 
 
 def test_metadata_deep_bundling(simple_mets):
@@ -517,74 +657,3 @@ def test_metadata_bundling(simple_sip):
     assert event_types >= expected_event_types
 
 
-@pytest.mark.parametrize(
-    "method_name,kwargs",
-    (
-        (
-            "from_files",
-            {
-                "metadata_xml_paths": ["tests/data/valid_ead3.xml"]
-            }
-        ),
-        (
-            "from_files",
-            {
-                "metadata_xml_strings": [
-                    Path("tests/data/valid_ead3.xml").read_bytes()
-                ]
-            }
-        ),
-        (
-            "from_directory",
-            {
-                "metadata_xml_paths": ["tests/data/valid_ead3.xml"]
-            }
-        ),
-        (
-            "from_directory",
-            {
-                "metadata_xml_strings": [
-                    Path("tests/data/valid_ead3.xml").read_bytes()
-                ]
-            }
-        )
-    )
-)
-def test_xml_metadata_import_to_struct_map(
-        simple_mets, files, method_name, kwargs):
-    """
-    Test that XML metadata given to `SIP.from_directory` is
-    automatically detected, imported and linked to the root of the
-    automatically generated structural map
-    """
-    kwargs = kwargs.copy()
-
-    kwargs["mets"] = simple_mets
-    if method_name == "from_files":
-        sip_factory_method = SIP.from_files
-
-        kwargs["files"] = files
-    elif method_name == "from_directory":
-        sip_factory_method = SIP.from_directory
-
-        kwargs["directory_path"] = "tests/data/generate_sip_from_directory/data"
-
-    sip = sip_factory_method(**kwargs)
-    mets = sip.mets
-
-    assert len(mets.structural_maps) == 1
-    struct_map = list(mets.structural_maps)[0]
-
-    imported_metadata = next(
-        metadata for metadata in struct_map.root_div.metadata
-        if isinstance(metadata, ImportedMetadata)
-    )
-
-    assert imported_metadata.is_descriptive
-    assert imported_metadata.other_format == "EAD3"
-
-    if "metadata_xml_strings" in kwargs:
-        assert b"<ead " in imported_metadata.data_string
-    else:
-        assert imported_metadata.data_path == \
-            Path(kwargs["metadata_xml_paths"][0]).resolve()

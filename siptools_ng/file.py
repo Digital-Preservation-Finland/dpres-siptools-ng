@@ -167,9 +167,6 @@ class File:
         self,
         path: Union[str, Path],
         digital_object_path: Union[str, Path],
-        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
-            None
-        ),
         streams: Optional[Iterable[mets_builder.DigitalObjectStream]] = None,
         identifier: Optional[str] = None,
         *args,
@@ -182,10 +179,6 @@ class File:
         :param digital_object_path: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
-        :param metadata: Iterable of metadata objects that describe this
-            stream. Note that the metadata should be administrative metadata,
-            and any descriptive metadata of a digital object should be added to
-            a div in a structural map.
         :param streams: Iterable of DigitalObjectStreams, representing the
             streams of this digital object.
         :param identifier: Identifier for the digital object. The
@@ -195,7 +188,6 @@ class File:
         self.path = Path(path)
         self.digital_object = mets_builder.DigitalObject(
             path=digital_object_path,
-            metadata=metadata,
             streams=streams,
             identifier=identifier,
             *args,
@@ -203,6 +195,26 @@ class File:
         )
         self._technical_metadata_generated = False
         self._csv_has_header = None
+        self.descriptive_metadata = set()
+
+    def add_metadata(
+        self,
+        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
+            None
+        ),
+    ) -> None:
+        """Add metadata to file.
+
+        :param metadata: Iterable of metadata objects that describe this
+            file.
+        """
+        # Descriptive metadata will be added default structural map when
+        # it is created. Other metadata is added to digital object.
+        self.descriptive_metadata \
+            |= {md for md in metadata if md.is_descriptive}
+        self.digital_object.add_metadata(
+            metadata=set(metadata) - self.descriptive_metadata
+        )
 
     @property
     def path(self) -> Path:
@@ -608,7 +620,6 @@ class File:
         path: Union[str, Path],
         digital_object_path: Union[str, Path],
         scraper_result: dict,
-        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (None),
         identifier: Optional[str] = None,
         *args,
         **kwargs
@@ -620,10 +631,6 @@ class File:
         :param digital_object_path: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
-        :param metadata: Iterable of metadata objects that describe this
-            file. Note that the metadata should be administrative metadata,
-            and any descriptive metadata of a digital object should be added to
-            a div in a structural map.
         :param identifier: Identifier for the digital object. The
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
@@ -633,7 +640,6 @@ class File:
         file = cls(
             path=path,
             digital_object_path=digital_object_path,
-            metadata=metadata,
             identifier=identifier,
             *args,
             **kwargs

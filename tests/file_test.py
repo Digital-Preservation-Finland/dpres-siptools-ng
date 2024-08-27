@@ -6,14 +6,14 @@ import file_scraper
 import pytest
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
-                                   TechnicalAudioMetadata,
-                                   TechnicalCSVMetadata,
-                                   TechnicalImageMetadata,
-                                   TechnicalFileObjectMetadata,
+                                   ImportedMetadata, TechnicalAudioMetadata,
                                    TechnicalBitstreamObjectMetadata,
+                                   TechnicalCSVMetadata,
+                                   TechnicalFileObjectMetadata,
+                                   TechnicalImageMetadata,
                                    TechnicalVideoMetadata)
 
-from siptools_ng.file import MetadataGenerationError, File
+from siptools_ng.file import File, MetadataGenerationError
 from utils import find_metadata
 
 
@@ -668,3 +668,48 @@ def test_previously_scraped_data():
     assert technical_metadata.file_format == "test_mimetype"
     assert technical_metadata.file_format_version == "test_version"
     assert technical_metadata.checksum == "test_checksum"
+
+
+def test_add_metadata():
+    """Test adding metadata to file.
+
+    Add non-descriptive metadata to a file. The metadata should be added
+    to digital object of the file.
+    """
+    file = File(path="tests/data/test_file.txt", digital_object_path='foo')
+
+    file.add_metadata([
+        DigitalProvenanceEventMetadata(
+            event_type="creation",
+            detail="test event",
+            outcome="success",
+            outcome_detail="test detail",
+        )
+    ])
+
+    added_metadata \
+        = find_metadata(file, DigitalProvenanceEventMetadata)
+    assert added_metadata.detail == "test event"
+
+    # Descriptive metadata should not exist
+    assert file.descriptive_metadata == set()
+
+
+def test_add_descriptive_metadata():
+    """Test adding descriptive metadata to file."""
+    file = File(path="tests/data/test_file.txt", digital_object_path='foo')
+
+    descriptive_md = ImportedMetadata(
+        metadata_type="descriptive",
+        metadata_format="OTHER",
+        other_format="foo",
+        format_version="bar",
+        data_string="adsf",
+    )
+    file.add_metadata([descriptive_md])
+
+    # Metadata should not be added to digital object
+    assert len(file.digital_object.metadata) == 0
+
+    # The file should contain the added descriptive metadata
+    assert file.descriptive_metadata == {descriptive_md}

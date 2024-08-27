@@ -8,7 +8,6 @@ from typing import Optional, Union
 
 import dpres_signature.signature
 import mets_builder
-from mets_builder.digital_object import DigitalObject
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
                                    ImportedMetadata, Metadata)
@@ -150,30 +149,11 @@ class SIP:
 
         tmp_digital_object_path.rename(output_filepath)
 
-    def _create_default_structural_map(self) -> None:
-        """Automatically generates a default structural map based on the
-        directory structure.
-        """
-        digital_objects = []
-        for file in self.files:
-            digital_objects.append(file.digital_object)
-        if digital_objects:
-            structural_map = _structural_map_from_directory_structure(
-                digital_objects=digital_objects,
-                additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
-            )
-            self.mets.add_structural_maps([structural_map])
-            self.mets.generate_file_references()
-            return structural_map
-
     @classmethod
     def from_files(
         cls,
         files: Iterable[File],
         mets: mets_builder.METS,
-        *,  # Following arguments have to be provided as keyword args
-        metadata_xml_paths: Optional[Iterable[Union[str, Path]]] = None,
-        metadata_xml_strings: Iterable[bytes] = None
     ) -> "SIP":
         """Generate a complete SIP object from a list of File instances.
 
@@ -185,38 +165,26 @@ class SIP:
                      with additional entries (structural map, agents, events).
         :param files: File instances. Technical metadata is automatically
                       generated for those that don't already have it.
-        :param metadata_xml_paths: External XML files to import and include
-            in the METS as descriptive metadata. Will be attached to the root
-            of the automatically generated structural map.
-        :param metadata_xml_strings: XML documents to include in the METS
-            as descriptive metadata. Will be attached to the root of the
-            automatically generated structural map.
 
         :returns: SIP object initialized according to the given files
         """
-        if not metadata_xml_paths:
-            metadata_xml_paths = []
-
-        if not metadata_xml_strings:
-            metadata_xml_strings = []
 
         for file in files:
             if not file._technical_metadata_generated:
                 file.generate_technical_metadata()
 
-        dmds = []
-
-        for path in metadata_xml_paths:
-            dmds.append(ImportedMetadata.from_path(path))
-
-        for string in metadata_xml_strings:
-            dmds.append(ImportedMetadata.from_string(string))
-
         sip = cls(mets=mets, files=files)
-        struct_map = sip._create_default_structural_map()
 
-        if struct_map:
-            _add_metadata(struct_map.root_div, dmds)
+        # Generate default structural map based on the directory
+        # structure
+        if files:
+            structural_map = _structural_map_from_directory_structure(
+                files=files,
+                additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
+            )
+            sip.mets.add_structural_maps([structural_map])
+            sip.mets.generate_file_references()
+            sip.default_struct_map = structural_map
 
         return sip
 
@@ -225,9 +193,6 @@ class SIP:
         cls,
         directory_path: Union[Path, str],
         mets: mets_builder.METS,
-        *,  # Following arguments have to be provided as keyword args
-        metadata_xml_paths: Optional[Iterable[Union[str, Path]]] = None,
-        metadata_xml_strings: Iterable[bytes] = None
     ) -> "SIP":
         """Generate a SIP object according to the contents of a directory.
 
@@ -268,31 +233,47 @@ class SIP:
 
         # Pass the generated File instances to `SIP.from_files`, which
         # will handle rest of the automatic SIP creation.
-        return cls.from_files(
-            mets=mets, files=files,
-            metadata_xml_paths=metadata_xml_paths,
-            metadata_xml_strings=metadata_xml_strings
-        )
+        return cls.from_files(mets=mets, files=files)
+
+    def add_metadata(self, metadata: Iterable[Metadata]):
+        """Add an iterable of metadata to SIP.
+
+        The metadata is applied to all files of the SIP. Technically the
+        metadata is added to root div of default structural map.
+
+        If metadata is imported metadata, also an event that describes
+        the import process is created.
+
+        :param metadata: The iterable of metadata objects that is added.
+        """
+        div = self.default_struct_map.root_div
+        for metadata_element in metadata:
+            # TODO: This code expects that all ImportedMetadata is
+            # descriptive metadata. So if some other type of metadata is
+            # imported, the PREMIS event will contain wrong
+            # information.
+            if isinstance(metadata_element, ImportedMetadata):
+                div.add_metadata([_create_metadata_import_event()])
+        div.add_metadata(metadata)
 
 
 def _structural_map_from_directory_structure(
-    digital_objects: Iterable[DigitalObject],
+    files: Iterable[File],
     additional_agents:
         Optional[Iterable[DigitalProvenanceAgentMetadata]] = None
 ) -> StructuralMap:
-    """Generate a structural map according to the directory structure of the
-    digital objects.
+    """Generate a structural map according to the paths of the files.
 
     Returns a StructuralMap instance with StructuralMapDivs generated and
     DigitalObjects added to the generated StructuralMapDivs according to
     the directory structure as inferred from the digital_object_path attributes
-    of the given digital objects.
+    of the given files.
 
     The div labels will be set to be the same as the corresponding directory
     name and div type is "directory". The entire div tree will be placed into a
     wrapping div with type "directory".
 
-    For example, if three digital objects are given, and their respective
+    For example, if three files are given, and their respective
     digital_object_path attributes are:
     - "data/directory_1/file_1.txt"
     - "data/directory_1/file_2.txt"
@@ -314,7 +295,7 @@ def _structural_map_from_directory_structure(
     'creation' and the agent linked to the event as the executing program
     is dpres-mets-builder.
 
-    :param digital_objects: The DigitalObject instances that are used to
+    :param files: The File instances that are used to
         generate the structural map
     :param additional_agents: Digital provenance agent metadata to be added
         as additional executing programs for the structural map creation
@@ -324,14 +305,14 @@ def _structural_map_from_directory_structure(
         the involvement of other programs that call this method to create
         the structural map.
 
-    :raises: ValueError if 'digital_objects' is empty.
+    :raises: ValueError if 'files' is empty.
 
     :returns: A StructuralMap instance structured according to the
         directory structure inferred from the given digital objects
     """
-    if not digital_objects:
+    if not files:
         raise ValueError(
-            "Given 'digital_objects' is empty. Structural map can not be "
+            "Given 'files' is empty. Structural map can not be "
             "generated with zero digital objects."
         )
 
@@ -346,8 +327,9 @@ def _structural_map_from_directory_structure(
     # dict directory filepath -> child directory filepaths
     directory_relationships = defaultdict(set)
 
-    for digital_object in digital_objects:
+    for file in files:
 
+        digital_object = file.digital_object
         digital_object_path = PurePath(digital_object.path)
 
         for path in digital_object_path.parents:
@@ -371,6 +353,15 @@ def _structural_map_from_directory_structure(
             label=Path(digital_object.path).name
         )
         wrapper_div.add_digital_objects([digital_object])
+        wrapper_div.add_metadata(file.descriptive_metadata)
+        # Generate PREMIS event for importing metadata.
+        # TODO: This code expects that imported metadata is always
+        # descriptive. So if user imports some other medatata to file,
+        # PREMIS event is not created. Is it correct?
+        for metadata_element in file.descriptive_metadata:
+            if isinstance(metadata_element, ImportedMetadata):
+                wrapper_div.add_metadata([_create_metadata_import_event()])
+
         path2div[digital_object_path.parent].divs.add(wrapper_div)
 
     # Nest divs according to the directory structure
@@ -380,31 +371,6 @@ def _structural_map_from_directory_structure(
         parent_div.add_divs(child_divs)
 
     # Document the process as digital provenance metadata
-    _add_digital_provenance_for_structural_map_creation(
-        structural_map, additional_agents
-    )
-
-    # Bundle metadata recursively
-    structural_map.root_div.bundle_metadata()
-
-    return structural_map
-
-
-def _add_digital_provenance_for_structural_map_creation(
-    structural_map,
-    additional_agents=None
-):
-    """Creates digital provenance metadata for structural map creation.
-
-    Creates an event for structural map creation, an agent representing
-    dpres-mets-builder, and links the agent as an agent for the event. Also
-    adds the event and agent as metadata for the root div.
-
-    :param root_div: The root div of the structural map in question
-    :param additional_agents: Optional agents to be linked to the event
-        additionally to the dpres-mets-builder agent, and added as metadata to
-        the root_div
-    """
     if additional_agents is None:
         additional_agents = []
 
@@ -429,34 +395,29 @@ def _add_digital_provenance_for_structural_map_creation(
             agent_role="executing program"
         )
 
-    _add_metadata(structural_map.root_div,
-                  [event, mets_builder_agent] + additional_agents)
+    # TODO: Why are agents added? Shouldn't they be added automatically?
+    structural_map.root_div.add_metadata(
+        [event, mets_builder_agent] + additional_agents
+    )
+
+    # Bundle metadata recursively
+    structural_map.root_div.bundle_metadata()
+
+    return structural_map
 
 
-def _add_metadata(div: StructuralMapDiv,
-                  metadata: Iterable[Metadata]):
-    """Add an iterable of metadata to a given div.
-
-    The metadata should apply to all digital objects under this div (as
-    well as digital objects under the divs nested in this div)
-
-    If metadata is imported metadata, also an event that describes
-    the import process is added to div.
-
-    :param div: The div that the metadata object is added to.
-
-    :param metadata: The iterable of metadata objects that is added.
-    """
-    for metadata_element in metadata:
-        if isinstance(metadata_element, ImportedMetadata):
-            event = DigitalProvenanceEventMetadata(
-                event_type="metadata extraction",
-                detail="Descriptive metadata import from external source",
-                outcome="success",
-                outcome_detail=(
-                    "Descriptive metadata imported to "
-                    "mets dmdSec from external source"
-                )
-            )
-            div.add_metadata([event])
-    div.add_metadata(metadata)
+def _create_metadata_import_event():
+    """Creates premis event that describes metadata import."""
+    # TODO: This event does not specify which metadata was imported. If
+    # there is multiple descriptive metadata objects in the div (or
+    # where ever this event is added to), it is unclear which metadata
+    # this event is related to.
+    return DigitalProvenanceEventMetadata(
+        event_type="metadata extraction",
+        detail="Descriptive metadata import from external source",
+        outcome="success",
+        outcome_detail=(
+            "Descriptive metadata imported to "
+            "mets dmdSec from external source"
+        )
+    )

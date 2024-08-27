@@ -31,11 +31,11 @@ provenance_md = DigitalProvenanceEventMetadata(
         outcome="success",
         outcome_detail="Another detail",
     )
-sip.add_metadata(provenance_md)
+sip.add_metadata([provenance_md])
 
 # Import descriptive metadata from an XML source, and add it to SIP
 descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
-sip.add_metadata(descriptive_md)
+sip.add_metadata([descriptive_md])
 
 sip.finalize(
     output_filepath="result/example-automated-sip.tar",
