@@ -167,10 +167,7 @@ class File:
         self,
         path: Union[str, Path],
         digital_object_path: Union[str, Path],
-        streams: Optional[Iterable[mets_builder.DigitalObjectStream]] = None,
         identifier: Optional[str] = None,
-        *args,
-        **kwargs
     ) -> None:
         """Constructor for File.
 
@@ -179,8 +176,6 @@ class File:
         :param digital_object_path: File path of this digital object in the
             SIP, relative to the SIP root directory. Note that this can be
             different than the path in the local filesystem.
-        :param streams: Iterable of DigitalObjectStreams, representing the
-            streams of this digital object.
         :param identifier: Identifier for the digital object. The
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
@@ -188,10 +183,7 @@ class File:
         self.path = Path(path)
         self.digital_object = mets_builder.DigitalObject(
             path=digital_object_path,
-            streams=streams,
             identifier=identifier,
-            *args,
-            **kwargs
         )
         self._technical_metadata_generated = False
         self._csv_has_header = None
@@ -621,8 +613,6 @@ class File:
         digital_object_path: Union[str, Path],
         scraper_result: dict,
         identifier: Optional[str] = None,
-        *args,
-        **kwargs
     ) -> None:
         """Constructor for File using previously scraped metadata.
 
@@ -641,8 +631,6 @@ class File:
             path=path,
             digital_object_path=digital_object_path,
             identifier=identifier,
-            *args,
-            **kwargs
         )
         file.generate_technical_metadata(scraper_result=scraper_result)
         return file
