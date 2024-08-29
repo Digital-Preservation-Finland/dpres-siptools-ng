@@ -1,7 +1,7 @@
 """Module for handling digital objects in SIP."""
 import platform
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Iterable, Optional, Union
 
 import mets_builder
@@ -66,7 +66,7 @@ def _file_creation_date(filepath: Path) -> str:
 def _create_technical_csv_metadata(
         stream: dict, filepath, has_header
 ) -> mets_builder.metadata.TechnicalImageMetadata:
-    """Create technical csv metadata object from file-scraper stream."""
+    """Create technical CSV metadata object from file-scraper stream."""
     first_line = stream["first_line"]
     if has_header:
         header = first_line
@@ -159,15 +159,17 @@ class File:
     """Class for handling digital objects in SIPs.
 
     A ``mets_builder.digital_object.DigitalObject`` is created for the given
-    file and is available under the ``digital_object`` property. This can be
-    used to enrich the underlying METS entry with additional metadata.
+    file and is available under the :attr:`File.digital_object` property. This
+    can be used to enrich the underlying METS entry with additional metadata.
     """
 
     def __init__(
         self,
         path: Union[str, Path],
-        digital_object_path: Union[str, Path],
-        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = None,
+        digital_object_path: Union[str, PurePath],
+        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = (
+            None
+        ),
         identifier: Optional[str] = None,
     ) -> None:
         """Constructor for File.
@@ -290,9 +292,9 @@ class File:
         creating_application_version: Optional[str] = None,
         scraper_result: Optional[dict] = None,
     ) -> dict:
-        """Generate technical metadata for this digital object.
+        """Generate technical metadata for the digital object.
 
-        Scrapes the file found in File.path,
+        Scrapes the file found in :attr:`File.path`,
         turning the scraped information into a
         mets_builder.metadata.TechnicalFileObjectMetadata object, and
         finally adds the metadata to this digital object.
@@ -342,7 +344,7 @@ class File:
         :param charset: Overrides scraped charset of the object with a
             predefined value. Character encoding of the file. If given
             as string, the value is cast to
-            mets_builder.metadata.Charset and results in error if it is
+            :class:`mets_builder.metadata.Charset` and results in error if it is
             not a valid charset. The allowed values
             can be found from Charset documentation.
         :param original_name: Overrides scraped original name of the

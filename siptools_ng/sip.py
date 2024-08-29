@@ -21,7 +21,14 @@ SIGNATURE_FILENAME = "signature.sig"
 
 
 class SIP:
-    """Class for Submission Information Package (SIP) handling."""
+    """Class for Submission Information Package (SIP) handling.
+
+    .. note::
+
+        To create a SIP from existing directory or files use
+        :meth:`SIP.from_directory` or :meth:`SIP.from_files`.
+
+    """
 
     def __init__(
             self,
@@ -29,10 +36,6 @@ class SIP:
             files: Optional[Iterable[File]] = None
     ) -> None:
         """Constructor for SIP class.
-
-        .. note:: To create a SIP from existing directory or files you
-                  should instead use :meth:``SIP.from_directory``
-                  or :meth:``SIP.from_files``.
 
         :param mets: METS object representing the METS file of this SIP.
         :param files: Files to be added into the SIP.
