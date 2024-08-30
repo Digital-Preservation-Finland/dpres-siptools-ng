@@ -180,7 +180,6 @@ class SIP:
         if files:
             structural_map = _structural_map_from_directory_structure(
                 files=files,
-                additional_agents=[siptools_ng.agent.get_siptools_ng_agent()]
             )
             sip.mets.add_structural_maps([structural_map])
             sip.mets.generate_file_references()
@@ -259,8 +258,6 @@ class SIP:
 
 def _structural_map_from_directory_structure(
     files: Iterable[File],
-    additional_agents:
-        Optional[Iterable[DigitalProvenanceAgentMetadata]] = None
 ) -> StructuralMap:
     """Generate a structural map according to the paths of the files.
 
@@ -297,13 +294,6 @@ def _structural_map_from_directory_structure(
 
     :param files: The File instances that are used to
         generate the structural map
-    :param additional_agents: Digital provenance agent metadata to be added
-        as additional executing programs for the structural map creation
-        event. These agents will be added alongside dpres-mets-builder as
-        executing programs for the event, and as metadata for the root
-        div of the structural map. This parameter can be used to document
-        the involvement of other programs that call this method to create
-        the structural map.
 
     :raises: ValueError if 'files' is empty.
 
@@ -371,9 +361,6 @@ def _structural_map_from_directory_structure(
         parent_div.add_divs(child_divs)
 
     # Document the process as digital provenance metadata
-    if additional_agents is None:
-        additional_agents = []
-
     event = DigitalProvenanceEventMetadata(
         event_type="creation",
         detail=(
@@ -386,19 +373,14 @@ def _structural_map_from_directory_structure(
             f"'{structural_map.structural_map_type}'"
         )
     )
-    mets_builder_agent = \
-        DigitalProvenanceAgentMetadata.get_mets_builder_agent()
-
-    for agent in [mets_builder_agent] + additional_agents:
+    agents = [DigitalProvenanceAgentMetadata.get_mets_builder_agent(),
+              siptools_ng.agent.get_siptools_ng_agent()]
+    for agent in agents:
         event.link_agent_metadata(
             agent_metadata=agent,
             agent_role="executing program"
         )
-
-    # TODO: Why are agents added? Shouldn't they be added automatically?
-    structural_map.root_div.add_metadata(
-        [event, mets_builder_agent] + additional_agents
-    )
+    structural_map.root_div.add_metadata([event])
 
     # Bundle metadata recursively
     structural_map.root_div.bundle_metadata()

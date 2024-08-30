@@ -274,26 +274,29 @@ def test_generating_structural_map_with_no_digital_objects():
     )
 
 
-def test_generating_structural_map_digital_provenance():
+def test_generating_structural_map_digital_provenance(simple_mets):
     """Test that digital provenance metadata is created correctly when
     structural map is generated.
 
-    Event (structmap generation) and agent (dpres-mets-builder) should have
-    been added to the root div of the generated structural map. The agent
-    should also be linked to the event as the executing program.
+    Event (structmap generation) and agents (dpres-siptools-ng and
+    dpres-mets-builder) should have been added to the root div of the
+    generated structural map. The agents should also be linked to the
+    event as the executing program.
     """
     file = File(path="tests/data/test_file.txt",
                 digital_object_path="data/file.txt")
-    structural_map = _structural_map_from_directory_structure([file])
+    sip = SIP.from_files(mets=simple_mets, files=[file])
 
-    root_div = structural_map.root_div
-    assert len(root_div.metadata) == 2
+    root_div = sip.default_struct_map.root_div
 
     # Event
-    event = next(
+    creation_events = [
         metadata for metadata in root_div.metadata
         if isinstance(metadata, DigitalProvenanceEventMetadata)
-    )
+        and metadata.event_type == "creation"
+    ]
+    assert len(creation_events) == 1
+    event = creation_events[0]
     assert event.event_type == "creation"
     assert event.detail == (
         "Creation of structural metadata with the "
@@ -307,58 +310,19 @@ def test_generating_structural_map_digital_provenance():
     assert event.event_identifier is None
     assert event.datetime is None
 
-    # Agent
-    assert len(event.linked_agents) == 1
-    linked_agent = event.linked_agents[0]
-    assert linked_agent.agent_role == "executing program"
-    assert linked_agent.agent_metadata.name == "dpres-mets-builder"
+    # Two agents should be linked to structmap creation event
+    assert len(event.linked_agents) == 2
+    for agent in event.linked_agents:
+        assert agent.agent_role == "executing program"
 
-    agent_in_div = next(
-        metadata for metadata in root_div.metadata
-        if isinstance(metadata, DigitalProvenanceAgentMetadata)
-    )
-    assert agent_in_div == linked_agent.agent_metadata
+    # The agents should be mets-builder and siptools-ng
+    agent_mds = [agent.agent_metadata for agent in event.linked_agents]
+    assert {agent_md.name for agent_md in agent_mds} \
+        == {"dpres-mets-builder", "dpres-siptools-ng"}
 
-
-def test_generating_structural_map_digital_provenance_with_custom_agents():
-    """Test that custom agents can be added to generated structural map.
-
-    The agents should have been added to the root div of the generated
-    structural map. The agents should also be linked to the structmap creation
-    event as executing programs.
-    """
-    file = File(path="tests/data/test_file.txt",
-                digital_object_path="data/file.txt")
-    custom_agent_1 = DigitalProvenanceAgentMetadata(
-        name="custom_agent_1",
-        version="1.0",
-        agent_type="software"
-    )
-    custom_agent_2 = DigitalProvenanceAgentMetadata(
-        name="custom_agent_2",
-        version="1.0",
-        agent_type="software"
-    )
-
-    structural_map = _structural_map_from_directory_structure(
-        [file],
-        additional_agents=[custom_agent_1, custom_agent_2]
-    )
-
-    root_div = structural_map.root_div
-    mets_builder = DigitalProvenanceAgentMetadata.get_mets_builder_agent()
-    assert mets_builder in root_div.metadata
-    assert custom_agent_1 in root_div.metadata
-    assert custom_agent_2 in root_div.metadata
-
-    event = next(
-        metadata for metadata in root_div.metadata
-        if isinstance(metadata, DigitalProvenanceEventMetadata)
-    )
-    linked_agents = (agent.agent_metadata for agent in event.linked_agents)
-    assert mets_builder in linked_agents
-    assert custom_agent_1 in linked_agents
-    assert custom_agent_2 in linked_agents
+    # Also the linked agents have been added to root_div
+    for agent_md in agent_mds:
+        assert agent_md in root_div.metadata
 
 
 class DummyMetadata(Metadata):
@@ -655,5 +619,3 @@ def test_metadata_bundling(simple_sip):
     expected_event_types = {'format identification',
                             'message digest calculation', 'creation'}
     assert event_types >= expected_event_types
-
-
