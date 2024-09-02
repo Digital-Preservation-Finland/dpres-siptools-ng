@@ -76,6 +76,10 @@ def test_generating_technical_metadata_for_text_file():
     # Raises error if file_created_date doesn't follow the right format
     datetime.strptime(metadata.file_created_date, format_string)
 
+    # The technical metadata should also be accessible via "metadata"
+    # property
+    assert metadata in file.metadata
+
 
 def test_generating_technical_metadata_for_image():
     """Test that generating technical metadata for an image results in correct
@@ -678,18 +682,19 @@ def test_add_metadata():
     """
     file = File(path="tests/data/test_file.txt", digital_object_path='foo')
 
-    file.add_metadata([
-        DigitalProvenanceEventMetadata(
-            event_type="creation",
-            detail="test event",
-            outcome="success",
-            outcome_detail="test detail",
-        )
-    ])
+    added_metadata = DigitalProvenanceEventMetadata(
+        event_type="creation",
+        detail="test event",
+        outcome="success",
+        outcome_detail="test detail",
+    )
+    file.add_metadata([added_metadata])
 
-    added_metadata \
-        = find_metadata(file, DigitalProvenanceEventMetadata)
-    assert added_metadata.detail == "test event"
+    # The metadata should have been added to digital_object
+    assert added_metadata in file.digital_object.metadata
+
+    # The metadata should also be accessible via "metadata" property
+    assert added_metadata in file.metadata
 
     # Descriptive metadata should not exist
     assert file.descriptive_metadata == set()
@@ -713,3 +718,6 @@ def test_add_descriptive_metadata():
 
     # The file should contain the added descriptive metadata
     assert file.descriptive_metadata == {descriptive_md}
+
+    # The metadata should also be accessible via "metadata" property
+    assert descriptive_md in file.metadata

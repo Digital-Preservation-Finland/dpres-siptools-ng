@@ -214,6 +214,14 @@ class File:
         )
 
     @property
+    def metadata(self) -> Iterable[mets_builder.metadata.Metadata]:
+        """Metadata of file.
+
+        Returns all metadata that has been added or generated.
+        """
+        return self.digital_object.metadata | self.descriptive_metadata
+
+    @property
     def path(self) -> Path:
         """Getter for path."""
         return self._path
