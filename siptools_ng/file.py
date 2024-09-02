@@ -167,15 +167,18 @@ class File:
         self,
         path: Union[str, Path],
         digital_object_path: Union[str, Path],
+        metadata: Optional[Iterable[mets_builder.metadata.Metadata]] = None,
         identifier: Optional[str] = None,
     ) -> None:
         """Constructor for File.
 
         :param path: File path of the local source file for this
             digital object. Symbolic links in the path are resolved.
-        :param digital_object_path: File path of this digital object in the
-            SIP, relative to the SIP root directory. Note that this can be
-            different than the path in the local filesystem.
+        :param digital_object_path: File path of this digital object in
+            the SIP, relative to the SIP root directory. Note that this
+            can be different than the path in the local filesystem.
+        :param metadata: Iterable of metadata objects that describe this
+            file.
         :param identifier: Identifier for the digital object. The
             identifier must be unique in the METS document. If None, the
             identifier is generated automatically.
@@ -188,6 +191,8 @@ class File:
         self._technical_metadata_generated = False
         self._csv_has_header = None
         self.descriptive_metadata = set()
+        if metadata:
+            self.add_metadata(metadata)
 
     def add_metadata(
         self,
