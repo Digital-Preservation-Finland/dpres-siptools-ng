@@ -5,7 +5,7 @@ from pathlib import Path
 
 import lxml
 import pytest
-from mets_builder import METS, MetsProfile
+from mets_builder import METS, MetsProfile, StructuralMap
 from mets_builder.digital_object import DigitalObject
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
@@ -287,7 +287,7 @@ def test_generating_structural_map_digital_provenance(simple_mets):
                 digital_object_path="data/file.txt")
     sip = SIP.from_files(mets=simple_mets, files=[file])
 
-    root_div = sip.default_struct_map.root_div
+    root_div = sip.default_structural_map.root_div
 
     # Event
     creation_events = [
@@ -369,12 +369,12 @@ def test_add_metadata_to_sip(simple_sip, metadata_class):
     Metadata should be added to root div of default structural map.
     """
     simple_sip.add_metadata([metadata_class('test-id')])
-    added_md = find_metadata(simple_sip.default_struct_map.root_div,
+    added_md = find_metadata(simple_sip.default_structural_map.root_div,
                              metadata_class)
     assert added_md.identifier == "test-id"
 
     # Metada import event should not be generated
-    events = [md for md in simple_sip.default_struct_map.root_div.metadata
+    events = [md for md in simple_sip.default_structural_map.root_div.metadata
               if isinstance(md, DigitalProvenanceEventMetadata)]
     for event in events:
         assert event.event_type != "metadata extraction"
@@ -390,7 +390,7 @@ def test_add_imported_metadata_to_sip(simple_mets):
                 digital_object_path="test_file.txt")
     sip=SIP.from_files(mets=simple_mets, files=[file])
 
-    div = sip.default_struct_map.root_div
+    div = sip.default_structural_map.root_div
 
     metadata = ImportedMetadata(
         metadata_type=MetadataType.DESCRIPTIVE,
@@ -438,7 +438,7 @@ def test_add_descriptive_metadata_to_file(simple_mets):
 
     # Root div should contain one div for each file. One of the divs
     # should contain descriptive metadata, the other should not.
-    divs = list(sip.default_struct_map.root_div.divs)
+    divs = list(sip.default_structural_map.root_div.divs)
     assert len(divs) == 2
     for div in divs:
         if div.label == "with_md":
@@ -479,7 +479,7 @@ def test_add_imported_metadata_to_file(simple_mets):
     # should contain descriptive metadata and PREMIS event that
     # describes metadata import. The other div should not contain any
     # metadata.
-    divs = list(sip.default_struct_map.root_div.divs)
+    divs = list(sip.default_structural_map.root_div.divs)
     assert len(divs) == 2
     for div in divs:
         if div.label == "with_md":
@@ -619,3 +619,30 @@ def test_metadata_bundling(simple_sip):
     expected_event_types = {'format identification',
                             'message digest calculation', 'creation'}
     assert event_types >= expected_event_types
+
+
+def test_change_default_structmap(simple_sip):
+    """Changing default structural map should not be allowed."""
+    new_root_div  = StructuralMapDiv(div_type="foo")
+    new_structmap = StructuralMap(root_div=new_root_div)
+    with pytest.raises(AttributeError):
+        simple_sip.default_structural_map = new_structmap
+    with pytest.raises(AttributeError):
+        del simple_sip.default_structural_map
+
+
+def test_default_structmap_removed(simple_sip):
+    """Test removing default structural map from METS.
+
+    If default structural map is removed from METS,
+    default_structural_map method should raise error. Note that it would
+    be better if user could not even accidentally remove default
+    structural map from METS.
+    """
+    new_root_div  = StructuralMapDiv(div_type="foo")
+    new_structmap = StructuralMap(root_div=new_root_div)
+    simple_sip.mets.structural_maps = {new_structmap}
+    with pytest.raises(ValueError,
+                       match="Default structural map no longer set"):
+        simple_sip.default_structural_map
+

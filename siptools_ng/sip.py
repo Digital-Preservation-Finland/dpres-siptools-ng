@@ -149,6 +149,16 @@ class SIP:
 
         tmp_digital_object_path.rename(output_filepath)
 
+    @property
+    def default_structural_map(self):
+        """Default structural map."""
+        if self._default_structural_map \
+                and self._default_structural_map \
+                not in self.mets.structural_maps:
+            raise ValueError("Default structural map no longer set")
+
+        return self._default_structural_map
+
     @classmethod
     def from_files(
         cls,
@@ -183,7 +193,7 @@ class SIP:
             )
             sip.mets.add_structural_maps([structural_map])
             sip.mets.generate_file_references()
-            sip.default_struct_map = structural_map
+            sip._default_structural_map = structural_map
 
         return sip
 
@@ -245,7 +255,7 @@ class SIP:
 
         :param metadata: The iterable of metadata objects that is added.
         """
-        div = self.default_struct_map.root_div
+        div = self.default_structural_map.root_div
         for metadata_element in metadata:
             # TODO: This code expects that all ImportedMetadata is
             # descriptive metadata. So if some other type of metadata is
