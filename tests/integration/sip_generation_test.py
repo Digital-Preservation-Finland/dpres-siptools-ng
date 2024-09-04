@@ -28,18 +28,12 @@ def _get_testing_filepaths(tmp_path_of_test):
     return output_filepath, extracted_filepath
 
 
-def test_file_location_in_sip(tmp_path):
+def test_file_location_in_sip(tmp_path, simple_mets):
     """Test that digital objects are copied to the right path in the finalized
     SIP.
     """
     output_filepath, extracted_filepath = _get_testing_filepaths(tmp_path)
 
-    mets = METS(
-        mets_profile=MetsProfile.CULTURAL_HERITAGE,
-        contract_id="contract_id",
-        creator_name="Mr. Foo",
-        creator_type="INDIVIDUAL"
-    )
     file_1 = File(
         path="tests/data/test_file.txt",
         digital_object_path="data/files/test_file_1.txt"
@@ -54,10 +48,10 @@ def test_file_location_in_sip(tmp_path):
         digital_objects.append(file.digital_object)
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_maps([structural_map])
-    mets.generate_file_references()
+    simple_mets.add_structural_maps([structural_map])
+    simple_mets.generate_file_references()
 
-    sip = SIP(mets=mets, files=files)
+    sip = SIP(mets=simple_mets, files=files)
     sip.finalize(
         output_filepath=output_filepath,
         sign_key_filepath="tests/data/rsa-keys.crt"
@@ -73,17 +67,11 @@ def test_file_location_in_sip(tmp_path):
     assert (datadir / "files" / "test_file_2.txt").is_file()
 
 
-def test_stream_relationships_in_sip_mets(tmp_path):
+def test_stream_relationships_in_sip_mets(simple_mets):
     """
     Test that relationships between a digital object and bitstreams
     contained within it are added into the generated METS
     """
-    mets = METS(
-        mets_profile=MetsProfile.CULTURAL_HERITAGE,
-        contract_id="contract_id",
-        creator_name="Mr. Foo",
-        creator_type="INDIVIDUAL"
-    )
     file = File(
         path="tests/data/test_video_ffv_flac.mkv",
         digital_object_path="data/files/test_video.mkv"
@@ -92,10 +80,10 @@ def test_stream_relationships_in_sip_mets(tmp_path):
     root_div = StructuralMapDiv("test_div",
                                 digital_objects=[file.digital_object])
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_maps([structural_map])
-    mets.generate_file_references()
+    simple_mets.add_structural_maps([structural_map])
+    simple_mets.generate_file_references()
 
-    xml = mets.to_xml()
+    xml = simple_mets.to_xml()
 
     xml_root = etree.fromstring(xml)
 
@@ -171,17 +159,11 @@ def test_stream_relationships_in_sip_mets(tmp_path):
     ]) == 1
 
 
-def test_mets_technical_metadata_deduplicate(tmp_path):
+def test_mets_technical_metadata_deduplicate(simple_mets):
     """
     Test that identical technical metadata shared by multiple digital objects
     is deduplicated in the generated METS.
     """
-    mets = METS(
-        mets_profile=MetsProfile.CULTURAL_HERITAGE,
-        contract_id="contract_id",
-        creator_name="Mr. Foo",
-        creator_type="INDIVIDUAL"
-    )
     # Four instances of the same Matroska video file
     files = [
         File(
@@ -204,10 +186,10 @@ def test_mets_technical_metadata_deduplicate(tmp_path):
 
     root_div = StructuralMapDiv("test_div", digital_objects=digital_objects)
     structural_map = StructuralMap(root_div=root_div)
-    mets.add_structural_maps([structural_map])
-    mets.generate_file_references()
+    simple_mets.add_structural_maps([structural_map])
+    simple_mets.generate_file_references()
 
-    xml = mets.to_xml()
+    xml = simple_mets.to_xml()
     xml_root = etree.fromstring(xml)
 
     # Ensure the file group is defined and contains the file and its streams
