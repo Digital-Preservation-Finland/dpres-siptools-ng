@@ -26,11 +26,11 @@ sip = SIP.from_directory(
 
 # Create provenance metadata and add it to SIP
 provenance_md = DigitalProvenanceEventMetadata(
-        event_type="creation",
-        detail="This is a detail",
-        outcome="success",
-        outcome_detail="Another detail",
-    )
+    event_type="creation",
+    detail="This is a detail",
+    outcome="success",
+    outcome_detail="Another detail",
+)
 sip.add_metadata([provenance_md])
 
 # Import descriptive metadata from an XML source, and add it to SIP

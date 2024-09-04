@@ -45,11 +45,11 @@ file3 = File(
 
 # Create provenance metadata
 provenance_md = DigitalProvenanceEventMetadata(
-        event_type="creation",
-        detail="This is a detail",
-        outcome="success",
-        outcome_detail="Another detail",
-    )
+    event_type="creation",
+    detail="This is a detail",
+    outcome="success",
+    outcome_detail="Another detail",
+)
 
 # Import descriptive metadata from an XML source
 descriptive_md = ImportedMetadata.from_path("example_metadata/ead3.xml")
