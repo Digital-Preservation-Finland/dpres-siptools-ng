@@ -26,7 +26,7 @@ def simple_mets():
     """A fixture for preparing a simple METS object."""
     return METS(
         mets_profile=MetsProfile.CULTURAL_HERITAGE,
-        contract_id="123e4567-e89b-12d3-a456-426614174000",
+        contract_id="urn:uuid:123e4567-e89b-12d3-a456-426614174000",
         creator_name="Mr. Foo",
         creator_type="INDIVIDUAL"
     )
