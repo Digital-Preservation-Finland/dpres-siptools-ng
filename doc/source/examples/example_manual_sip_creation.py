@@ -84,5 +84,5 @@ sip = SIP.from_files(mets=mets, files=[file1, file2, file3])
 # Finalize the SIP and write it to file
 sip.finalize(
     output_filepath="result/example-manual-sip.tar",
-    sign_key_filepath="../tests/data/rsa-keys.crt"
+    sign_key_filepath="data/rsa-keys.crt"
 )

@@ -39,5 +39,5 @@ sip.add_metadata([descriptive_md])
 
 sip.finalize(
     output_filepath="result/example-automated-sip.tar",
-    sign_key_filepath="../tests/data/rsa-keys.crt"
+    sign_key_filepath="data/rsa-keys.crt"
 )

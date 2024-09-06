@@ -21,11 +21,8 @@ def test_example_automated_sip_creation(example_code, output_file,
     """Test that example codes run without error."""
     # Copy doc source files to a temporary location to avoid accidentally
     # modifying the original directory if the test crashes for some reason
-    doc_path = Path(tmpdir / "doc")
-    test_path = Path(tmpdir / "tests" / "data")
-
-    shutil.copytree("doc", doc_path)
-    shutil.copytree("tests/data", test_path)
+    doc_path = Path(tmpdir / "doc/source/examples")
+    shutil.copytree("doc/source/examples", doc_path)
 
     monkeypatch.chdir(doc_path)
 

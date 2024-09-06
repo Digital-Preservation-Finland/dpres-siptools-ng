@@ -344,8 +344,8 @@ class File:
         :param charset: Overrides scraped charset of the object with a
             predefined value. Character encoding of the file. If given
             as string, the value is cast to
-            :class:`mets_builder.metadata.Charset` and results in error if it is
-            not a valid charset. The allowed values
+            :class:`mets_builder.metadata.Charset` and results in error
+            if it is not a valid charset. The allowed values
             can be found from Charset documentation.
         :param original_name: Overrides scraped original name of the
             object with a predefined value.

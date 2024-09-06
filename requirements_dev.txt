@@ -1,6 +1,9 @@
 # Testing requirements
 pytest
 
+sphinx
+sphinx-autodoc-typehints
+
 # Code dependencies
 git+https://gitlab.ci.csc.fi/dpres/dpres-mets-builder.git@develop#egg=dpres-mets-builder
 git+https://gitlab.ci.csc.fi/dpres/dpres-signature.git@develop#egg=dpres-signature

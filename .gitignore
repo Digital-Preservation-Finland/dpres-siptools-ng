@@ -52,4 +52,4 @@ venv.bak/
 
 rpmbuild
 siptools_ng/_version.py
-doc/result/
+doc/source/examples/result/
