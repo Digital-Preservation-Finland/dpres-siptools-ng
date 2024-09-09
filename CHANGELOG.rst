@@ -12,6 +12,24 @@ Added
 - Automatic creation of PREMIS events when adding imported metadata to SIP
 - Automatic creation of default structural map for each SIP object
 
+::
+
+     _______________________________________
+    / Kiitokset Kristianille hyvin tehdystä \
+    \ työstä siptools-ng:n parissa!         /
+     ---------------------------------------
+        \
+         \  /\/\
+           \   /
+           |  0 >>
+           |___|
+     __((_<|   |
+    (          |
+    (__________)
+       |      |
+       |      |
+       /\     /\
+
 Changed
 ^^^^^^^
 - Replaced ``SIPDigitalObject`` with ``File``
