@@ -1,8 +1,3 @@
-**NOTE: The project is not ready for production use. It is published prematurely to give an opportunity
-to get acquainted with the project in advance and to get feedback.**
-
-To give feedback, please open a GitHub issue or pull request.
-
 dpres-siptools-ng
 =================
 
