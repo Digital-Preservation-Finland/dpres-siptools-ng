@@ -15,7 +15,8 @@ author = 'CSC - IT Center for Science'
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints'
+    'sphinx_autodoc_typehints',
+    'sphinx.ext.intersphinx'
 ]
 
 templates_path = ['_templates']
@@ -28,3 +29,10 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 autoclass_content = 'both'
+
+intersphinx_mapping = {
+    'mets_builder': (
+        'https://digital-preservation-finland.github.io/dpres-mets-builder',
+        None
+    )
+}
