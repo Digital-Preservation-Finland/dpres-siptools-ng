@@ -3,6 +3,11 @@ git+https://github.com/Digital-Preservation-Finland/dpres-mets-builder.git
 git+https://github.com/Digital-Preservation-Finland/dpres-signature.git
 git+https://github.com/Digital-Preservation-Finland/file-scraper.git
 
+# Temporary patch for ffmpeg-python / jpeg2000 lossless detection
+git+https://github.com/Digital-Preservation-Finland/ffmpeg-python.git#egg=ffmpeg_python
+# Get our newest format string changes not yet present in official Fido repository
+git+https://github.com/Digital-Preservation-Finland/fido.git#egg=opf_fido
+
 # TODO: These can be dropped when we move to newer pip
 # mets_builder transitive dependencies
 git+https://github.com/Digital-Preservation-Finland/xml-helpers.git#egg=xml_helpers
