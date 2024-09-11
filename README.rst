@@ -28,7 +28,9 @@ After the repository has been added, the package can be installed by running the
 Usage
 -----
 
-See documentation and example code under ``doc/``.
+See the `online documentation`_ and example code under ``doc/source/examples``.
+
+.. _online documentation: https://digital-preservation-finland.github.io/dpres-siptools-ng
 
 Installation using Python Virtualenv for development purposes
 -------------------------------------------------------------
