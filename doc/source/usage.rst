@@ -67,6 +67,14 @@ using the :meth:`siptools_ng.sip.SIP.finalize` method:
         sign_key_filepath="rsa-keys.crt"
     )
 
+.. note::
+
+   `rsa-keys.crt` is the signing key used to create a digital signature for the
+   SIP.
+
+   See the `instructions on the National Digital Preservation Service site <https://digitalpreservation.fi/user_guide/deployment>`_
+   (in Finnish) for generating this signing key.
+
 The generated `sip.tar` file can then be uploaded into the service.
 
 Files
