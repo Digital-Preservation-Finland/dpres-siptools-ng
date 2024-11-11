@@ -8,13 +8,23 @@ Advanced usage
 Generating technical metadata
 -----------------------------
 
-:meth:`siptools_ng.file.File.generate_technical_metadata` accepts many optional
-parameters to ensure correct technical metadata is entered for the file.
+Siptools-ng usually detects file formats correctly, but it might sometimes
+generate wrong technical metadata due to missing context. For example, a CSV
+file could be detected as plain text file. The detected file format can be
+verified as follows:
 
-siptools-ng might sometimes generate wrong technical metadata due to missing
-context; for example, if we know ahead of time that a file we're importing is a
-CSV file and want to ensure it's not detected as a plain text file, we can
-ensure this using:
+.. code-block:: python
+
+   techmd = next(
+       metadata for metadata in file.metadata
+       if metadata.metadata_type.value == "technical"
+       and metadata.metadata_format.value == "PREMIS:OBJECT"
+   )
+   techmd.file_format  # The detected mimetype of the file, for example "text/plain"
+
+If we know that we are importing a CSV file, we can ensure that it is detected
+correctly by generating technical metadata manually using
+:meth:`siptools_ng.file.File.generate_technical_metadata` method:
 
 .. code-block:: python
 
@@ -24,8 +34,9 @@ ensure this using:
 
 .. note::
 
-   The generated technical metadata is provided by file-scraper_, which is
-   a command-line tool that can also be used outside siptools-ng.
+   Siptools-ng generates the technical metadata with file-scraper_.
+   File-scraper also provides a command-line interface that can be used study
+   files without siptools-ng.
 
 Enriching the SIP/files with additional metadata
 ------------------------------------------------
