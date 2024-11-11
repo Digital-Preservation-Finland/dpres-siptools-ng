@@ -22,6 +22,7 @@ BuildRequires:  pyproject-rpm-macros
 BuildRequires:  %{py3_dist pip}
 BuildRequires:  %{py3_dist setuptools}
 BuildRequires:  %{py3_dist wheel}
+BuildRequires:  %{py3_dist ipt}
 
 %global _description %{expand:
 Library for creating Submission Information Packages (SIP) that comply to the specifications of national digital preservation services of Finland.
@@ -34,7 +35,6 @@ Summary: %{summary}
 Requires:       %{py3_dist dpres-mets-builder}
 Requires:       python3-file-scraper-full
 Requires:       %{py3_dist dpres-signature}
-Requires:       %{py3_dist ipt}
 %description -n python3-dpres-siptools-ng %_description
 
 %prep
