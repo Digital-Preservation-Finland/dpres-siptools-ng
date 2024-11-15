@@ -74,6 +74,71 @@ management system *ArchiveStar*. We can add an event for this:
     # as it was linked to the event.
     file.add_metadata([event])
 
+
+Linking files to other files
+----------------------------
+
+For example, we might have two versions of the same file: the original non-supported file, and version that has been migrated to a supported file format:
+
+.. code-block:: python
+
+        source_file = File(
+            path="example_files/movie.mov",
+            digital_object_path="data/movie.mov"
+        )
+        source_file.generate_technical_metadata()
+        outcome_file = File(
+            path="example_files/movie.mkv",
+            digital_object_path="data/movie.mkv"
+        )
+        outcome_file.generate_technical_metadata()
+
+The non-supported source file will not pass validation in DPS, so the validation of the non-supported file must be skipped:
+
+.. code-block:: python
+
+        source_file.digital_object.use = "fi-dpres-no-file-format-validation"
+
+To link the files to each other we create a migration event, which is linked to technical metadata of the files:
+
+.. code-block:: python
+
+        event = mets_builder.metadata.DigitalProvenanceEventMetadata(
+            event_type = "migration",
+            detail = "Normalization of digital object.",
+            outcome = "success",
+            outcome_detail = ("Source file format has been normalized. Outcome "
+                              "object has been created as a result."),
+            datetime = "2024-08-14T15:22:00",
+        )
+
+        source_file_techmd = next(
+            metadata for metadata in source_file.metadata
+            if metadata.metadata_type.value == "technical"
+            and metadata.metadata_format.value == "PREMIS:OBJECT"
+        )
+        event.link_object_metadata(
+            source_file_techmd,
+            object_role="source"
+        )
+        outcome_file_techmd = next(
+            metadata for metadata in outcome_file.metadata
+            if metadata.metadata_type.value == "technical"
+            and metadata.metadata_format.value == "PREMIS:OBJECT"
+        )
+        event.link_object_metadata(
+            outcome_file_techmd,
+            object_role="outcome"
+        )
+
+Finally, the event is added to the files:
+
+.. code-block:: python
+
+        source_file.add_metadata([event])
+        outcome_file.add_metadata([event])
+
+
 Modifying and reading the underlying METS object
 ------------------------------------------------
 
