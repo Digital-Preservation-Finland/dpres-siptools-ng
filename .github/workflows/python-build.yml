@@ -1,0 +1,43 @@
+---
+name: python-build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  wheel-sdist-build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v2
+      # NOTE: Python 3.9 on 24.04 will likely be deprecated on 2029-04-01.
+      # Remember to update before that date!
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          "$GITHUB_REF_NAME"
+          --repo "$GITHUB_REPOSITORY"
+          --notes ""
+      - name: Upload sdist and wheel to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload
+          "$GITHUB_REF_NAME" dist/**
+          --repo "$GITHUB_REPOSITORY"
