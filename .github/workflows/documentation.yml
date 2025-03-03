@@ -10,11 +10,12 @@ permissions:
 
 jobs:
   build:
-    # Ubuntu 20.04 has Python 3.9
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v2
+      # NOTE: Python 3.9 on 24.04 will be deprecated on 2028-04-01. Remember
+      # to update before that date!
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
