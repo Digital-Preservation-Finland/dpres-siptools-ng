@@ -263,7 +263,7 @@ def test_generate_technical_metadata_for_video_container():
         if isinstance(metadata, TechnicalBitstreamObjectMetadata)
         and metadata.file_format == "audio/flac"
     )
-    assert flac_bitstream.file_format_version == "1.2.1"
+    assert flac_bitstream.file_format_version == "(:unap)"
 
     container = next(
         metadata for metadata in metadatas
