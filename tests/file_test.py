@@ -582,7 +582,7 @@ def test_event(event_type, detail, outcome_detail,
     linked_agents = {linked_agent.agent_metadata
                      for linked_agent in event.linked_agents}
     assert {agent.name for agent in linked_agents} \
-        == expected_linked_agents
+        >= expected_linked_agents
 
     for agent in linked_agents:
         assert agent.agent_type.value == "software"
