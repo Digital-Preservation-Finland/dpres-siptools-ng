@@ -345,6 +345,34 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     file.generate_technical_metadata()
     assert file.digital_object.use == expected_use
 
+    # "Metadata extraction" event is not added for bit-level files
+    assert not any(
+        metadata for metadata in file.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+        and metadata.event_type == "metadata extraction"
+    )
+
+
+def test_generate_metadata_for_bit_level_video():
+    """
+    Test that videoMD metadata is *not* generated for a bit-level video
+    file
+    """
+    file = File(
+        path="tests/data/test_video_prores_lpcm8.mov",
+        digital_object_path="sip_data/movie.mov"
+    )
+    file.generate_technical_metadata()
+
+    assert not any(
+        metadata for metadata in file.metadata
+        if isinstance(metadata, TechnicalVideoMetadata)
+    )
+
+    tech_metadata = find_metadata(file, TechnicalFileObjectMetadata)
+
+    assert tech_metadata.file_format == "video/quicktime"
+
 
 def test_generate_metadata_with_predefined_values():
     """Test that it is possible to predefine values when generating metadata.

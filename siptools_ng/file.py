@@ -4,14 +4,15 @@ from datetime import datetime
 from pathlib import Path, PurePath
 from typing import Iterable, Optional, Union
 
-import mets_builder
 import file_scraper.scraper
+import mets_builder
+from file_scraper.defaults import (BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED,
+                                   UNACCEPTABLE)
 from mets_builder.defaults import UNAV
-from mets_builder.metadata import (DigitalProvenanceEventMetadata,
-                                   DigitalProvenanceAgentMetadata)
+from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
+                                   DigitalProvenanceEventMetadata)
 
 import siptools_ng.agent
-
 
 # Map scraper grades to values of USE attibute
 USE = {
@@ -443,6 +444,10 @@ class File:
                 "grade": scraper.grade()
             }
 
+        is_bit_level = scraper_result["grade"] in [
+            BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED, UNACCEPTABLE
+        ]
+
         # Create PREMIS metadata for file
         file_metadata = mets_builder.metadata.TechnicalFileObjectMetadata(
             file_format=scraper_result["mimetype"],
@@ -465,48 +470,52 @@ class File:
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
-        characteristics = self._create_technical_characteristics(
-            scraper_result["streams"][0]
-        )
-        if characteristics:
-            self.digital_object.add_metadata([characteristics])
+        if not is_bit_level:
+            characteristics = self._create_technical_characteristics(
+                scraper_result["streams"][0]
+            )
+            if characteristics:
+                self.digital_object.add_metadata([characteristics])
 
-        # Create metadata for the streams of a given file
-        for i, stream in enumerate(scraper_result["streams"].values()):
-            if i == 0:
-                # Skip the container itself
-                continue
+            # Create metadata for the streams of a given file
+            for i, stream in enumerate(scraper_result["streams"].values()):
+                if i == 0:
+                    # Skip the container itself
+                    continue
 
-            stream_metadata = \
-                mets_builder.metadata.TechnicalBitstreamObjectMetadata(
-                    file_format=stream["mimetype"],
-                    file_format_version=stream["version"]
+                stream_metadata = \
+                    mets_builder.metadata.TechnicalBitstreamObjectMetadata(
+                        file_format=stream["mimetype"],
+                        file_format_version=stream["version"]
+                    )
+
+                file_metadata.add_relationship(
+                    stream_metadata,
+                    relationship_type="structural",
+                    relationship_subtype="includes"
                 )
 
-            file_metadata.add_relationship(
-                stream_metadata,
-                relationship_type="structural",
-                relationship_subtype="includes"
-            )
+                # Add digital object streams
+                digital_object_stream = mets_builder.DigitalObjectStream(
+                    metadata=[stream_metadata]
+                )
 
-            # Add digital object streams
-            digital_object_stream = mets_builder.DigitalObjectStream(
-                metadata=[stream_metadata]
-            )
+                # Generate stream format specific metadata if applicable
+                characteristics = self._create_technical_characteristics(
+                    stream
+                )
+                if characteristics:
+                    digital_object_stream.add_metadata([characteristics])
 
-            # Generate stream format specific metadata if applicable
-            characteristics = self._create_technical_characteristics(stream)
-            if characteristics:
-                digital_object_stream.add_metadata([characteristics])
+                self.digital_object.add_streams([digital_object_stream])
 
-            self.digital_object.add_streams([digital_object_stream])
+            self._add_metadata_extraction_event(scraper_result)
 
         # Document file scraping
         if not checksum:
             self._add_checksum_calculation_event()
         if not file_format:
             self._add_format_identification_event(scraper_result)
-        self._add_metadata_extraction_event(scraper_result)
 
         # If file-scraper detects the file as "bit-level file" (for
         # example SEG-Y), set the use attribute accordingly.
