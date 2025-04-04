@@ -440,7 +440,7 @@ class File:
                 "info": scraper.info,
                 "mimetype": scraper.mimetype,
                 "version": scraper.version,
-                "checksum": scraper.checksum(algorithm="MD5"),
+                "checksum": scraper.checksum(algorithm="MD5").lower(),
                 "grade": scraper.grade()
             }
 
