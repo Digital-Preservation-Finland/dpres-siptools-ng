@@ -448,6 +448,9 @@ class File:
             BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED, UNACCEPTABLE
         ]
 
+        if checksum:
+            checksum = checksum.lower()
+
         # Create PREMIS metadata for file
         file_metadata = mets_builder.metadata.TechnicalFileObjectMetadata(
             file_format=scraper_result["mimetype"],
