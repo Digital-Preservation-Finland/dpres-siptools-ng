@@ -5,8 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-Unreleased
-----------
+1.1.0 - 2025-04-10
+------------------
+Changed
+^^^^^^^
+- Normalize checksums to lowercase in file technical metadata
+
 Fixed
 ^^^^^
 - Skip technical metadata element generation for bit-level files. This could cause crashes due to metadata being incompatible or incomplete.
