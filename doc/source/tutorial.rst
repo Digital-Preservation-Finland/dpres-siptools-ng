@@ -52,7 +52,7 @@ The easiest way to create a `SIP` object is to import a whole directory using
 
     from siptools_ng.sip import SIP
 
-    sip = SIP.from_directory(mets=mets, path="/path/to/local/directory")
+    sip = SIP.from_directory(mets=mets, directory_path="/path/to/local/directory")
 
 Each file in the directory and its subdirectories is added to SIP, and
 technical metadata is automatically created.
