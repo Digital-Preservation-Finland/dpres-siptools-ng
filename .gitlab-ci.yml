@@ -4,6 +4,7 @@ variables:
   CI_PYTHON_3: "yes"
   CI_SKIP_EL7: "yes"
   CI_EL9: "yes"
+  CI_SONAR: "yes"
 
 
 include:
