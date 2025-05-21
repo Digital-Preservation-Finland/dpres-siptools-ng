@@ -666,24 +666,19 @@ class File:
 def _create_scraper_agents(scraper_infos):
     agents = []
     for scraper_info in scraper_infos:
-        if scraper_info["tools"]:
-            tools = 'Used tools (name-version): ' \
-                + ', '.join(scraper_info['tools'])
-        else:
-            # The scraper/detector does not use any external tools
-            # TODO: It probably would not make much sense to create
-            # separate agent for this scraper/detector, as agent
-            # representing file-scraper will be created anyway. However,
-            # tools have not yet been defined for ANY scraper/detector,
-            # so it is probably better to create agent for every
-            # scraper/detector until the tools have been defined!
-            tools = None
-        agents.append(
-            DigitalProvenanceAgentMetadata(
-                name=scraper_info['class'],
-                agent_type="software",
-                version=file_scraper.__version__,
-                note=tools
+        if tools := scraper_info["tools"]:
+            tool_strings = [
+                f"{key}-{value['version']}"
+                for key, value
+                in tools.items()
+            ]
+            note = 'Used tools (name-version): ' + ', '.join(tool_strings)
+            agents.append(
+                DigitalProvenanceAgentMetadata(
+                    name=scraper_info['class'],
+                    agent_type="software",
+                    version=file_scraper.__version__,
+                    note=note,
+                )
             )
-        )
     return agents

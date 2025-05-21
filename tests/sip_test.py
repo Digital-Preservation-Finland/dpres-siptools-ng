@@ -533,14 +533,18 @@ def test_metadata_deep_bundling(simple_mets):
     assert len({div for div in root_div.divs if div.div_type == "directory"}) \
         == 2
 
+    # Check the agents of root_div. File-scraper, siptools-ng,
+    # dpres-mets-builder, and all detectors of file-scraper are used
+    # with all files, so according agents should be found from root_div.
     agent_names = {element.name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
-                            'ResultsMergeScraper', 'PredefinedDetector',
-                            'dpres-siptools-ng', 'dpres-mets-builder',
-                            'MimeMatchScraper', 'ODFDetector', 'MagicDetector',
-                            'FidoDetector'}
-    assert agent_names >= expected_agent_names
+    assert agent_names == {"file-scraper",
+                           "dpres-siptools-ng",
+                           "dpres-mets-builder",
+                           "ODFDetector",
+                           "MagicDetector",
+                           "FidoDetector",
+                           "EpubDetector"}
 
     event_types = {element.event_type for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}
@@ -553,11 +557,11 @@ def test_metadata_deep_bundling(simple_mets):
     assert len({div for div in div1.divs if div.div_type == "file"}) == 1
     assert len({div for div in div1.divs if div.div_type == "directory"}) == 0
 
+    # All files in div1 are text files, so they should be scraped
+    # with MagicTextScraper
     agent_names = {element.name for element in div1.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = {'CsvScraper', 'MagicTextScraper',
-                            'TextEncodingMetaScraper'}
-    assert agent_names >= expected_agent_names
+    assert agent_names == {"MagicTextScraper"}
 
     event_types = {element.event_type for element in div1.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}
@@ -569,24 +573,26 @@ def test_metadata_deep_bundling(simple_mets):
     assert not _check_shared_metadata(div2)
     assert len({div for div in div2.divs if div.div_type == "file"}) == 1
     assert len({div for div in div2.divs if div.div_type == "directory"}) == 1
+    # div2 and its subdirectoris contain multiple different file types,
+    # so scraper agents are not bundled
     agent_names = {element.name for element in div2.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = set()
-    assert agent_names >= expected_agent_names
+    assert agent_names == set()
 
     event_types = {element.event_type for element in div2.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}
-    expected_event_types = set()
-    assert event_types >= expected_event_types
+    assert event_types == set()
 
     # test root_div/div2/div3
     div3 = next(div for div in div2.divs if div.label == "div3")
     assert not _check_shared_metadata(div3)
     assert len({div for div in div3.divs if div.div_type == "file"}) == 2
     assert len({div for div in div3.divs if div.div_type == "directory"}) == 0
+    # All files in div3 are video files, so MediainfoScraper agent is
+    # bundled
     agent_names = {element.name for element in div3.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = {'MediainfoScraper'}
+    expected_agent_names = {"MediainfoScraper"}
     assert agent_names >= expected_agent_names
 
     event_types = {element.event_type for element in div3.metadata
@@ -607,12 +613,13 @@ def test_metadata_bundling(simple_sip):
 
     agent_names = {element.name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = {'SiardDetector', 'file-scraper', 'SegYDetector',
-                            'ResultsMergeScraper', 'PredefinedDetector',
-                            'dpres-siptools-ng', 'dpres-mets-builder',
-                            'MimeMatchScraper', 'ODFDetector', 'MagicDetector',
-                            'FidoDetector'}
-    assert agent_names >= expected_agent_names
+    assert agent_names ==  {"file-scraper",
+                            "dpres-siptools-ng",
+                            "dpres-mets-builder",
+                            "ODFDetector",
+                            "MagicDetector",
+                            "EpubDetector",
+                            "FidoDetector"}
 
     event_types = {element.event_type for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}

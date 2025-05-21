@@ -550,7 +550,7 @@ def test_generating_technical_metadata_for_csv_file(
 
 
 @pytest.mark.parametrize(
-    "event_type,detail,outcome_detail,expected_linked_agents",
+    ("event_type", "detail", "outcome_detail", "expected_linked_agents"),
     [
         (
             "message digest calculation",
@@ -564,21 +564,18 @@ def test_generating_technical_metadata_for_csv_file(
             "digital objects",
             "PREMIS metadata successfully created from extracted technical "
             "metadata.",
-            {"MagicTextScraper", "MimeMatchScraper", "ResultsMergeScraper",
-             "TextEncodingMetaScraper", "TextfileScraper", "file-scraper"}
+            {"file-scraper", "MagicTextScraper", "TextfileScraper"}
         ),
         (
             "format identification",
             "MIME type and version identification",
             "File MIME type and format version successfully identified.",
-            {"FidoDetector", "MagicDetector", "ODFDetector",
-             "PredefinedDetector", "SegYDetector", "SiardDetector",
-             "file-scraper"}
+            {"file-scraper", "EpubDetector", "FidoDetector",
+             "MagicDetector", "ODFDetector"}
         ),
     ]
 )
-def test_event(event_type, detail, outcome_detail,
-               expected_linked_agents):
+def test_event(event_type, detail, outcome_detail, expected_linked_agents):
     """Test that PREMIS event metadata is created.
 
     :param event_type: Event type
@@ -609,18 +606,7 @@ def test_event(event_type, detail, outcome_detail,
     # Expected agents should be linked to event
     linked_agents = {linked_agent.agent_metadata
                      for linked_agent in event.linked_agents}
-    assert {agent.name for agent in linked_agents} \
-        >= expected_linked_agents
-
-    for agent in linked_agents:
-        assert agent.agent_type.value == "software"
-        assert agent.version == file_scraper.__version__
-        assert agent.agent_identifier_type == "UUID"
-        assert agent.agent_identifier is None
-        # TODO: currently note is None for all scrapers/detectors,
-        # because tools have not been defined in file-scraper!
-        #
-        # assert agent.note.startswith('Used tools (name-version): ')
+    assert {agent.name for agent in linked_agents} == expected_linked_agents
 
     # Expected agent metadata should have been added also to
     # digital_object
@@ -628,6 +614,48 @@ def test_event(event_type, detail, outcome_detail,
         metadata.name for metadata in file.digital_object.metadata
         if isinstance(metadata, DigitalProvenanceAgentMetadata)
     }
+
+
+@pytest.mark.parametrize(
+    ("agent_name", "note"),
+    [
+        # scraper
+        ("file-scraper", None),
+        # Some Scraper class of scraper
+        # TODO: This test case fails with StopIteration error, because
+        # FFMpegScraper agent is not added. Why?
+        ("FFMpegScraper", "Used tools (name-version): ffmpeg-5.1.6"),
+        # Some Scraper class with multiple used tools
+        ("MediainfoScraper", "Used tools (name-version): "
+         "pymediainfo-7.0.1, MediaInfoLib-24.12"),
+        # Some detector of scraper
+        ("FidoDetector", "Used tools (name-version): fido-1.4.0"),
+    ]
+)
+def test_agent(agent_name, note):
+    """Test that agent metadata contains correct information.
+
+    :param agent_name: Agent to be found from digital object metadata
+    :param note: The expected note in the agent metadata
+    """
+    file = File(
+        path="tests/data/test_video_ffv_flac.mkv",
+        digital_object_path="sip_data/test_video_ffv_flac.mkv"
+    )
+    file.generate_technical_metadata()
+
+    agent = next(
+        metadata for metadata in file.digital_object.metadata
+        if (
+            isinstance(metadata, DigitalProvenanceAgentMetadata)
+            and metadata.name == agent_name
+        )
+    )
+    assert agent.agent_type.value == "software"
+    assert agent.version == file_scraper.__version__
+    assert agent.agent_identifier_type == "UUID"
+    assert agent.agent_identifier is None
+    assert agent.note == note
 
 
 @pytest.mark.parametrize(
