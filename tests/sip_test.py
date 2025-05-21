@@ -14,7 +14,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    MetadataFormat,
                                    MetadataType)
 from mets_builder.structural_map import StructuralMapDiv
-from utils import find_metadata
+from tests.utils import find_metadata
 
 import siptools_ng.agent
 from siptools_ng.file import File

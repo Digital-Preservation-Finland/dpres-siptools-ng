@@ -14,7 +14,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    TechnicalVideoMetadata)
 
 from siptools_ng.file import File, MetadataGenerationError
-from utils import find_metadata
+from tests.utils import find_metadata
 
 
 @pytest.mark.parametrize(
