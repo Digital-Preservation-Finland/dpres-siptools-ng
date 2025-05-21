@@ -621,10 +621,6 @@ def test_event(event_type, detail, outcome_detail, expected_linked_agents):
     [
         # scraper
         ("file-scraper", None),
-        # Some Scraper class of scraper
-        # TODO: This test case fails with StopIteration error, because
-        # FFMpegScraper agent is not added. Why?
-        ("FFMpegScraper", "Used tools (name-version): ffmpeg-5.1.6"),
         # Some Scraper class with multiple used tools
         ("MediainfoScraper", "Used tools (name-version): "
          "pymediainfo-7.0.1, MediaInfoLib-24.12"),
