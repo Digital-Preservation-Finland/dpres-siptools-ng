@@ -1,6 +1,7 @@
 """Test File."""
 import itertools
 from datetime import datetime
+import re
 
 import file_scraper
 import pytest
@@ -620,12 +621,24 @@ def test_event(event_type, detail, outcome_detail, expected_linked_agents):
     ("agent_name", "note"),
     [
         # scraper
-        ("file-scraper", None),
+        (
+            "file-scraper",
+            None
+        ),
         # Some Scraper class with multiple used tools
-        ("MediainfoScraper", "Used tools (name-version): "
-         "pymediainfo-7.0.1, MediaInfoLib-24.12"),
+        (
+            "MediainfoScraper",
+            # match for example "Used tools (name-version):
+            # pymediainfo-7.0.1, MediaInfoLib-24.12"
+            "Used tools \(name-version\): "
+            "pymediainfo-\d\.\d\.\d, MediaInfoLib-\d\d\.\d\d"
+        ),
         # Some detector of scraper
-        ("FidoDetector", "Used tools (name-version): fido-1.4.0"),
+        (
+            "FidoDetector",
+            # match for examle "Used tools (name-version): fido-1.4.0"
+            "Used tools \(name-version\): fido-\d\.\d\.\d"
+        ),
     ]
 )
 def test_agent(agent_name, note):
@@ -651,7 +664,10 @@ def test_agent(agent_name, note):
     assert agent.version == file_scraper.__version__
     assert agent.agent_identifier_type == "UUID"
     assert agent.agent_identifier is None
-    assert agent.note == note
+    if note:
+        assert re.compile(note).match(agent.note)
+    else:
+        assert agent.note == note
 
 
 @pytest.mark.parametrize(
