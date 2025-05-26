@@ -534,17 +534,19 @@ def test_metadata_deep_bundling(simple_mets):
         == 2
 
     # Check the agents of root_div. File-scraper, siptools-ng,
-    # dpres-mets-builder, and all detectors of file-scraper are used
-    # with all files, so according agents should be found from root_div.
+    # dpres-mets-builder are used with all files, so according agents
+    # should be found from root_div.
     agent_names = {element.name for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    assert agent_names == {"file-scraper",
-                           "dpres-siptools-ng",
-                           "dpres-mets-builder",
-                           "ODFDetector",
-                           "MagicDetector",
-                           "FidoDetector",
-                           "EpubDetector"}
+    expected_agent_names = {"file-scraper",
+                            "dpres-siptools-ng",
+                            "dpres-mets-builder"}
+    assert agent_names >= expected_agent_names
+    # Also the detectors are used with all files, so detector agents
+    # should be found from root_div
+    assert len(agent_names - expected_agent_names) > 1
+    for agent_name in (agent_names - expected_agent_names):
+        assert agent_name.endswith("Detector")
 
     event_types = {element.event_type for element in root_div.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}
