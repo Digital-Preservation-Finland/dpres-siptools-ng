@@ -1,4 +1,6 @@
 """Module for handling digital objects in SIP."""
+from __future__ import annotations
+
 import platform
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -10,7 +12,10 @@ from file_scraper.defaults import (BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED,
                                    UNACCEPTABLE)
 from mets_builder.defaults import UNAV
 from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
-                                   DigitalProvenanceEventMetadata)
+                                   DigitalProvenanceEventMetadata,
+                                   TechnicalFileObjectMetadata,
+                                   TechnicalBitstreamObjectMetadata,
+                                   ChecksumAlgorithm)
 
 import siptools_ng.agent
 
@@ -274,9 +279,7 @@ class File:
         self,
         file_format: Optional[str] = None,
         file_format_version: Optional[str] = None,
-        checksum_algorithm: Union[
-            mets_builder.metadata.ChecksumAlgorithm, str, None
-        ] = None,
+        checksum_algorithm: Union[ChecksumAlgorithm, str, None] = None,
         checksum: Optional[str] = None,
         file_created_date: Optional[str] = None,
         object_identifier_type: Optional[str] = None,
@@ -393,32 +396,12 @@ class File:
             to generate the same metadata without having to scrape the
             file again.
         """
-        if self._technical_metadata_generated:
-            raise MetadataGenerationError(
-                "Technical metadata has already been generated for the "
-                "digital object."
-            )
 
-        if file_format_version and not file_format:
-            raise ValueError(
-                "Predefined file format version is given, but file format is "
-                "not."
-            )
-        if checksum_algorithm and not checksum:
-            raise ValueError(
-                "Predefined checksum algorithm is given, but checksum is not."
-            )
-        if checksum and not checksum_algorithm:
-            raise ValueError(
-                "Predefined checksum is given, but checksum algorithm is not."
-            )
-        if (csv_has_header or csv_delimiter or csv_record_separator
-                or csv_quoting_character) and file_format != 'text/csv':
-            raise ValueError(
-                "CSV specific parameters (csv_has_header, csv_delimiter, "
-                "csv_record_separator, csv_quoting_character) can be "
-                "used only with CSV files"
-            )
+        self._validate_technical_metadata_parameters(
+            file_format, file_format_version, checksum_algorithm, checksum,
+            csv_has_header, csv_delimiter, csv_record_separator,
+            csv_quoting_character
+        )
 
         if csv_has_header is not None:
             self._csv_has_header = csv_has_header
@@ -452,7 +435,7 @@ class File:
             checksum = checksum.lower()
 
         # Create PREMIS metadata for file
-        file_metadata = mets_builder.metadata.TechnicalFileObjectMetadata(
+        file_metadata = TechnicalFileObjectMetadata(
             file_format=scraper_result["mimetype"],
             file_format_version=scraper_result["version"],
             checksum_algorithm=checksum_algorithm or "MD5",
@@ -474,45 +457,7 @@ class File:
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
         if not is_bit_level:
-            characteristics = self._create_technical_characteristics(
-                scraper_result["streams"][0]
-            )
-            if characteristics:
-                self.digital_object.add_metadata([characteristics])
-
-            # Create metadata for the streams of a given file
-            for i, stream in enumerate(scraper_result["streams"].values()):
-                if i == 0:
-                    # Skip the container itself
-                    continue
-
-                stream_metadata = \
-                    mets_builder.metadata.TechnicalBitstreamObjectMetadata(
-                        file_format=stream["mimetype"],
-                        file_format_version=stream["version"]
-                    )
-
-                file_metadata.add_relationship(
-                    stream_metadata,
-                    relationship_type="structural",
-                    relationship_subtype="includes"
-                )
-
-                # Add digital object streams
-                digital_object_stream = mets_builder.DigitalObjectStream(
-                    metadata=[stream_metadata]
-                )
-
-                # Generate stream format specific metadata if applicable
-                characteristics = self._create_technical_characteristics(
-                    stream
-                )
-                if characteristics:
-                    digital_object_stream.add_metadata([characteristics])
-
-                self.digital_object.add_streams([digital_object_stream])
-
-            self._add_metadata_extraction_event(scraper_result)
+            self._create_file_format_metadata(scraper_result, file_metadata)
 
         # Document file scraping
         if not checksum:
@@ -527,6 +472,97 @@ class File:
         self._technical_metadata_generated = True
 
         return scraper_result
+
+    def _create_file_format_metadata(
+            self,
+            scraper_result: dict | None,
+            file_metadata: TechnicalFileObjectMetadata
+    ) -> None:
+        """Create and add file format specific metadata to `scraper_result`
+
+        :param scraper_result: Scraper result to use with this file.
+        :param file_metadata: `TechnicalFileObjectMetadata` object
+        """
+        characteristics = self._create_technical_characteristics(
+                scraper_result["streams"][0]
+            )
+        if characteristics:
+            self.digital_object.add_metadata([characteristics])
+
+        # Create metadata for the streams of a given file
+        for i, stream in enumerate(scraper_result["streams"].values()):
+            if i == 0:
+                # Skip the container itself
+                continue
+
+            stream_metadata = TechnicalBitstreamObjectMetadata(
+                                file_format=stream["mimetype"],
+                                file_format_version=stream["version"]
+                            )
+
+            file_metadata.add_relationship(
+                    stream_metadata,
+                    relationship_type="structural",
+                    relationship_subtype="includes"
+                )
+
+            # Add digital object streams
+            digital_object_stream = mets_builder.DigitalObjectStream(
+                    metadata=[stream_metadata]
+                )
+
+            # Generate stream format specific metadata if applicable
+            characteristics = self._create_technical_characteristics(
+                    stream
+                )
+            if characteristics:
+                digital_object_stream.add_metadata([characteristics])
+
+            self.digital_object.add_streams([digital_object_stream])
+
+        self._add_metadata_extraction_event(scraper_result)
+
+    def _validate_technical_metadata_parameters(
+            self,
+            file_format: str | None,
+            file_format_version: str | None,
+            checksum_algorithm: ChecksumAlgorithm | str | None,
+            checksum: str | None,
+            csv_has_header: bool | None,
+            csv_delimiter: str | None,
+            csv_record_separator: str | None,
+            csv_quoting_character: str | None
+    ) -> None:
+        """Check that parameters for technical metadata generation are valid
+
+        :raises MetadataGenerationError: If metadata already exists
+        :raises ValueError: If the parameters are not valid
+        """
+        if self._technical_metadata_generated:
+            raise MetadataGenerationError(
+                "Technical metadata has already been generated for the "
+                "digital object."
+            )
+        if file_format_version and not file_format:
+            raise ValueError(
+                "Predefined file format version is given, but file format is "
+                "not."
+            )
+        if checksum_algorithm and not checksum:
+            raise ValueError(
+                "Predefined checksum algorithm is given, but checksum is not."
+            )
+        if checksum and not checksum_algorithm:
+            raise ValueError(
+                "Predefined checksum is given, but checksum algorithm is not."
+            )
+        if (csv_has_header or csv_delimiter or csv_record_separator
+                or csv_quoting_character) and file_format != 'text/csv':
+            raise ValueError(
+                "CSV specific parameters (csv_has_header, csv_delimiter, "
+                "csv_record_separator, csv_quoting_character) can be "
+                "used only with CSV files"
+            )
 
     def _add_checksum_calculation_event(self):
         """Add checksum calculation event to a digital object."""
