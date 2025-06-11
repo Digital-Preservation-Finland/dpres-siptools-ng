@@ -224,7 +224,8 @@ class SIP:
         :returns: SIP object initialized according to the directory structure
             in the given path.
         """
-        directory_path = Path(directory_path)
+        if isinstance(directory_path, str):
+            directory_path = Path(directory_path)
         if not directory_path.exists():
             raise ValueError(f"Path '{str(directory_path)}' does not exist.")
         if not directory_path.is_dir():
