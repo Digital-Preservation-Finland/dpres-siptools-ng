@@ -621,8 +621,8 @@ class File:
         self._add_event_agents(scraper_result, event, "Detector")
         self.digital_object.add_metadata([event])
 
-    # TODO: siptools-ng currently does not validate digital objects, so
-    # this method is unused.
+    # TODO: (TPASPKT-1356) siptools-ng currently does not validate digital
+    # objects, so this method is unused.
     def _add_validation_event(self, scraper_result: dict[str, Any]) -> None:
         """Add metadata validation event to a digital object.
 

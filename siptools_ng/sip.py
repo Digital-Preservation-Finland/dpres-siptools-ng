@@ -261,8 +261,8 @@ class SIP:
         """
         div = self.default_structural_map.root_div
         for metadata_element in metadata:
-            # TODO: This code expects that all ImportedMetadata is
-            # descriptive metadata. So if some other type of metadata is
+            # TODO: (TPASPKT-1389) This code expects that all ImportedMetadata
+            # is descriptive metadata. So if some other type of metadata is
             # imported, the PREMIS event will contain wrong
             # information.
             if isinstance(metadata_element, ImportedMetadata):
@@ -407,7 +407,7 @@ def _add_file_to_structural_map(
     wrapper_div.add_digital_objects([digital_object])
     wrapper_div.add_metadata(file.descriptive_metadata)
     # Generate PREMIS event for importing metadata.
-    # TODO: This code expects that imported metadata is always
+    # TODO: (TPASPKT-1389) This code expects that imported metadata is always
     # descriptive. So if user imports some other medatata to file,
     # PREMIS event is not created. Is it correct?
     for metadata_element in file.descriptive_metadata:
@@ -419,9 +419,9 @@ def _add_file_to_structural_map(
 
 def _create_metadata_import_event() -> DigitalProvenanceEventMetadata:
     """Creates premis event that describes metadata import."""
-    # TODO: This event does not specify which metadata was imported. If
-    # there is multiple descriptive metadata objects in the div (or
-    # where ever this event is added to), it is unclear which metadata
+    # TODO: (TPASPKT-1389) This event does not specify which metadata was
+    # imported. If there is multiple descriptive metadata objects in the div
+    # (or where ever this event is added to), it is unclear which metadata
     # this event is related to.
     return DigitalProvenanceEventMetadata(
         event_type="metadata extraction",
