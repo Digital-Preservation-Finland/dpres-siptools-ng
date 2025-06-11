@@ -687,13 +687,13 @@ class File:
         :param scraper_result: Previously scraped metadata as
             returned by :meth:`File.generate_technical_metadata`.
         """
-        file = cls(
+        file_obj = cls(
             path=path,
             digital_object_path=digital_object_path,
             identifier=identifier,
         )
-        file.generate_technical_metadata(scraper_result=scraper_result)
-        return file
+        file_obj.generate_technical_metadata(scraper_result=scraper_result)
+        return file_obj
 
 
 def _create_scraper_agents(scraper_infos):
