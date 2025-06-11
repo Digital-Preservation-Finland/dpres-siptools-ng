@@ -332,41 +332,7 @@ def _structural_map_from_directory_structure(
     directory_relationships = defaultdict(set)
 
     for file in files:
-
-        digital_object = file.digital_object
-        digital_object_path = PurePath(digital_object.path)
-
-        for path in digital_object_path.parents:
-            # Do not process path "."
-            if path == PurePath("."):
-                continue
-
-            # Create corresponding div for directories if they do not exist yet
-            if path not in path2div:
-                path2div[path] = StructuralMapDiv(
-                    div_type="directory",
-                    label=path.name
-                )
-
-            # Save directory relationships to be dealt with later
-            directory_relationships[path.parent].add(path)
-
-        # Create a wrapper div for the digital object and add it to parent div
-        wrapper_div = StructuralMapDiv(
-            div_type="file",
-            label=Path(digital_object.path).name
-        )
-        wrapper_div.add_digital_objects([digital_object])
-        wrapper_div.add_metadata(file.descriptive_metadata)
-        # Generate PREMIS event for importing metadata.
-        # TODO: This code expects that imported metadata is always
-        # descriptive. So if user imports some other medatata to file,
-        # PREMIS event is not created. Is it correct?
-        for metadata_element in file.descriptive_metadata:
-            if isinstance(metadata_element, ImportedMetadata):
-                wrapper_div.add_metadata([_create_metadata_import_event()])
-
-        path2div[digital_object_path.parent].divs.add(wrapper_div)
+        _add_file_to_structural_map(path2div, directory_relationships, file)
 
     # Nest divs according to the directory structure
     for parent_dir, child_dirs in directory_relationships.items():
@@ -402,7 +368,56 @@ def _structural_map_from_directory_structure(
     return structural_map
 
 
-def _create_metadata_import_event():
+def _add_file_to_structural_map(
+        path2div: dict[PurePath, StructuralMapDiv],
+        directory_relationships: defaultdict[PurePath, set[PurePath]],
+        file: File
+) -> None:
+    """Adds a file and its associated metadata to the structural map.
+
+    :param path2div: A mapping from directory paths to their corresponding
+        `StructuralMapDiv` instances
+    :param directory_relationships: A mapping from parent directories to their
+        child directories
+    :param file: The `File` instance to be added to the structural map
+    """
+    digital_object = file.digital_object
+    digital_object_path = PurePath(digital_object.path)
+
+    for path in digital_object_path.parents:
+        # Do not process path "."
+        if path == PurePath("."):
+            continue
+
+        # Create corresponding div for directories if they do not exist yet
+        if path not in path2div:
+            path2div[path] = StructuralMapDiv(
+                    div_type="directory",
+                    label=path.name
+                )
+
+        # Save directory relationships to be dealt with later
+        directory_relationships[path.parent].add(path)
+
+    # Create a wrapper div for the digital object and add it to parent div
+    wrapper_div = StructuralMapDiv(
+            div_type="file",
+            label=Path(digital_object.path).name
+        )
+    wrapper_div.add_digital_objects([digital_object])
+    wrapper_div.add_metadata(file.descriptive_metadata)
+    # Generate PREMIS event for importing metadata.
+    # TODO: This code expects that imported metadata is always
+    # descriptive. So if user imports some other medatata to file,
+    # PREMIS event is not created. Is it correct?
+    for metadata_element in file.descriptive_metadata:
+        if isinstance(metadata_element, ImportedMetadata):
+            wrapper_div.add_metadata([_create_metadata_import_event()])
+
+    path2div[digital_object_path.parent].divs.add(wrapper_div)
+
+
+def _create_metadata_import_event() -> DigitalProvenanceEventMetadata:
     """Creates premis event that describes metadata import."""
     # TODO: This event does not specify which metadata was imported. If
     # there is multiple descriptive metadata objects in the div (or
