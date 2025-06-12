@@ -475,7 +475,7 @@ class File:
 
     def _create_file_format_metadata(
             self,
-            scraper_result: dict | None,
+            scraper_result: dict,
             file_metadata: TechnicalFileObjectMetadata
     ) -> None:
         """Create and add file format specific metadata to `scraper_result`
@@ -601,7 +601,7 @@ class File:
                 "from extracted technical metadata."
             ),
         )
-        self._add_event_agents(scraper_result, event, "Scraper")
+        _add_event_agents(scraper_result, event, "Scraper")
         self.digital_object.add_metadata([event])
 
     def _add_format_identification_event(
@@ -618,7 +618,7 @@ class File:
                 "File MIME type and format version successfully identified."
             ),
         )
-        self._add_event_agents(scraper_result, event, "Detector")
+        _add_event_agents(scraper_result, event, "Detector")
         self.digital_object.add_metadata([event])
 
     # TODO: (TPASPKT-1356) siptools-ng currently does not validate digital
@@ -636,35 +636,8 @@ class File:
                 "Digital object(s) evaluated as well-formed and valid."
             ),
         )
-        self._add_event_agents(scraper_result, event, "Scraper")
+        _add_event_agents(scraper_result, event, "Scraper")
         self.add_metadata([event])
-
-    def _add_event_agents(
-            self,
-            scraper_result: dict[str, Any] | None,
-            event: DigitalProvenanceEventMetadata,
-            info_type: Literal["Scraper", "Detector"]
-    ) -> None:
-        """Link agent metadata to an event based on scraper or detector info.
-
-        :param scraper: Dictionary containing scraper or detector metadata.
-        :param event: The event to which agent metadata will be linked.
-        :param info_type: Type of agent info to extract
-        ("Scraper" or "Detector").
-        """
-        # In addition file-scraper itself, create agent metadata representing
-        # each Scraper/Detector that was used
-        infos = [
-            info for info in scraper_result["info"].values()
-            if info['class'].endswith(info_type)
-        ]
-        agents = ([siptools_ng.agent.get_file_scraper_agent()] +
-                  _create_scraper_agents(infos))
-        for agent in agents:
-            event.link_agent_metadata(
-                agent_metadata=agent,
-                agent_role="executing program"
-            )
 
     @classmethod
     def with_scraper_result(
@@ -694,6 +667,33 @@ class File:
         )
         file_obj.generate_technical_metadata(scraper_result=scraper_result)
         return file_obj
+
+
+def _add_event_agents(
+        scraper_result: dict[str, Any],
+        event: DigitalProvenanceEventMetadata,
+        info_type: Literal["Scraper", "Detector"]
+) -> None:
+    """Link agent metadata to an event based on scraper or detector info.
+
+    :param scraper_result: Dictionary containing scraper metadata.
+    :param event: The event to which agent metadata will be linked.
+    :param info_type: Type of agent info to extract
+    ("Scraper" or "Detector").
+    """
+    # In addition file-scraper itself, create agent metadata representing
+    # each Scraper/Detector that was used
+    infos = [
+        info for info in scraper_result["info"].values()
+        if info['class'].endswith(info_type)
+    ]
+    agents = ([siptools_ng.agent.get_file_scraper_agent()] +
+              _create_scraper_agents(infos))
+    for agent in agents:
+        event.link_agent_metadata(
+            agent_metadata=agent,
+            agent_role="executing program"
+        )
 
 
 def _create_scraper_agents(scraper_infos):
