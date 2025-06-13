@@ -18,6 +18,10 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    Charset,
                                    ChecksumAlgorithm)
 
+from mets_builder.metadata.digital_provenance_event_metadata import (
+    EventOutcome)
+
+
 import siptools_ng.agent
 
 # Map scraper grades to values of USE attibute
@@ -611,7 +615,9 @@ class File:
 
         :param scraper_result: Result dictionary from the metadata scraper.
         """
-        event = DigitalProvenanceEventMetadata(
+        event = _create_event_with_agents(
+            scraper_result=scraper_result,
+            info_type="Scraper",
             event_type="metadata extraction",
             detail=(
                 "Technical metadata extraction as PREMIS metadata "
@@ -623,7 +629,6 @@ class File:
                 "from extracted technical metadata."
             ),
         )
-        _add_event_agents(scraper_result, event, "Scraper")
         self.digital_object.add_metadata([event])
 
     def _add_format_identification_event(
@@ -632,7 +637,9 @@ class File:
 
         :param scraper_result: Result dictionary from the metadata scraper.
         """
-        event = DigitalProvenanceEventMetadata(
+        event = _create_event_with_agents(
+            scraper_result=scraper_result,
+            info_type="Detector",
             event_type="format identification",
             detail="MIME type and version identification",
             outcome="success",
@@ -640,7 +647,6 @@ class File:
                 "File MIME type and format version successfully identified."
             ),
         )
-        _add_event_agents(scraper_result, event, "Detector")
         self.digital_object.add_metadata([event])
 
     # TODO: (TPASPKT-1356) siptools-ng currently does not validate digital
@@ -650,7 +656,9 @@ class File:
 
         :param scraper_result: Result dictionary from the metadata scraper.
         """
-        event = DigitalProvenanceEventMetadata(
+        event = _create_event_with_agents(
+            scraper_result=scraper_result,
+            info_type="Scraper",
             event_type="validation",
             detail="Digital object validation",
             outcome="success",
@@ -658,7 +666,6 @@ class File:
                 "Digital object(s) evaluated as well-formed and valid."
             ),
         )
-        _add_event_agents(scraper_result, event, "Scraper")
         self.add_metadata([event])
 
     @classmethod
@@ -692,20 +699,35 @@ class File:
         return file_obj
 
 
-def _add_event_agents(
+def _create_event_with_agents(
         scraper_result: dict[str, Any],
-        event: DigitalProvenanceEventMetadata,
-        info_type: Literal["Scraper", "Detector"]
-) -> None:
-    """Link agent metadata to an event based on scraper or detector info.
+        info_type: Literal["Scraper", "Detector"],
+        event_type: str,
+        detail: str,
+        outcome: str | EventOutcome,
+        outcome_detail: str
+) -> DigitalProvenanceEventMetadata:
+    """Create a `DigitalProvenanceEventMetadata` object and link agent
+    metadata based on scraper or detector info.
 
     :param scraper_result: Dictionary containing scraper metadata.
-    :param event: The event to which agent metadata will be linked.
-    :param info_type: Type of agent info to extract
-    ("Scraper" or "Detector").
+    :param info_type: Type of agent info to extract ("Scraper" or "Detector").
+    :param event_type: A categorization of the nature of the event.
+    :param detail: Additional information about the event.
+    :param outcome: A categorization of the overall result of the event in
+        terms of success, partial success, or failure.
+    :param outcome_detail: A detailed description of the result or product of
+        the event.
+    :returns: A `DigitalProvenanceEventMetadata` object with linked agents.
     """
     # In addition file-scraper itself, create agent metadata representing
     # each Scraper/Detector that was used
+    event = DigitalProvenanceEventMetadata(
+        event_type=event_type,
+        detail=detail,
+        outcome=outcome,
+        outcome_detail=outcome_detail
+    )
     infos = [
         info for info in scraper_result["info"].values()
         if info['class'].endswith(info_type)
@@ -717,6 +739,7 @@ def _add_event_agents(
             agent_metadata=agent,
             agent_role="executing program"
         )
+    return event
 
 
 def _create_scraper_agents(scraper_infos):
