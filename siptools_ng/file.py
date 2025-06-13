@@ -646,7 +646,7 @@ class File:
         digital_object_path: Union[str, Path],
         scraper_result: dict,
         identifier: Optional[str] = None,
-    ) -> None:
+    ) -> File:
         """Constructor for File using previously scraped metadata.
 
         :param path: File path of the local source file for this
@@ -659,6 +659,7 @@ class File:
             identifier is generated automatically.
         :param scraper_result: Previously scraped metadata as
             returned by :meth:`File.generate_technical_metadata`.
+        :returns: File object.
         """
         file_obj = cls(
             path=path,
