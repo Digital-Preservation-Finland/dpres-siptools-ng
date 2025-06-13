@@ -15,6 +15,7 @@ from mets_builder.metadata import (DigitalProvenanceAgentMetadata,
                                    DigitalProvenanceEventMetadata,
                                    TechnicalFileObjectMetadata,
                                    TechnicalBitstreamObjectMetadata,
+                                   Charset,
                                    ChecksumAlgorithm)
 
 import siptools_ng.agent
@@ -284,7 +285,7 @@ class File:
         file_created_date: Optional[str] = None,
         object_identifier_type: Optional[str] = None,
         object_identifier: Optional[str] = None,
-        charset: Union[mets_builder.metadata.Charset, str, None] = None,
+        charset: Union[Charset, str, None] = None,
         original_name: Optional[str] = None,
         csv_has_header: Optional[bool] = None,
         csv_delimiter: Optional[str] = None,
@@ -398,9 +399,14 @@ class File:
         """
 
         self._validate_technical_metadata_parameters(
-            file_format, file_format_version, checksum_algorithm, checksum,
-            csv_has_header, csv_delimiter, csv_record_separator,
-            csv_quoting_character
+            file_format=file_format,
+            file_format_version=file_format_version,
+            checksum_algorithm=checksum_algorithm,
+            checksum=checksum,
+            csv_has_header=csv_has_header,
+            csv_delimiter=csv_delimiter,
+            csv_record_separator=csv_record_separator,
+            csv_quoting_character=csv_quoting_character
         )
 
         if csv_has_header is not None:
@@ -533,7 +539,23 @@ class File:
             csv_record_separator: str | None,
             csv_quoting_character: str | None
     ) -> None:
-        """Check that parameters for technical metadata generation are valid
+        """Check that parameters for technical metadata generation are valid.
+
+        :param file_format: The MIME type of the file
+        :param file_format_version: The version of the file format.
+            Must be provided if `file_format` is set.
+        :param checksum_algorithm: The algorithm used to compute the checksum.
+            Must be provided if `checksum` is set.
+        :param checksum: The checksum value of the file. Must be provided if
+            `checksum_algorithm` is set.
+        :param csv_has_header: Indicates whether the CSV file has a header row.
+            Only valid if `file_format` is 'text/csv'.
+        :param csv_delimiter: The character used to separate fields in a CSV
+            file. Only valid if `file_format` is 'text/csv'.
+        :param csv_record_separator: The character used to separate records in
+            a CSV file. Only valid if `file_format` is 'text/csv'.
+        :param csv_quoting_character: The character used to quote fields in a
+            CSV file. Only valid if `file_format` is 'text/csv'.
 
         :raises MetadataGenerationError: If metadata already exists
         :raises ValueError: If the parameters are not valid
