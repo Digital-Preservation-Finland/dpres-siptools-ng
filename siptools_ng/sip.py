@@ -332,7 +332,15 @@ def _structural_map_from_directory_structure(
     directory_relationships = defaultdict(set)
 
     for file in files:
-        _add_file_to_structural_map(path2div, directory_relationships, file)
+        for path, div in _generate_directory_divs(file):
+            if path not in path2div:
+                path2div[path] = div
+
+        for parent, child in _generate_directory_relationships(file):
+            directory_relationships[parent].add(child)
+
+        parent_path, wrapper_div = _generate_file_wrapper_div(file)
+        path2div[parent_path].divs.add(wrapper_div)
 
     # Nest divs according to the directory structure
     for parent_dir, child_dirs in directory_relationships.items():
@@ -368,53 +376,74 @@ def _structural_map_from_directory_structure(
     return structural_map
 
 
-def _add_file_to_structural_map(
-        path2div: dict[PurePath, StructuralMapDiv],
-        directory_relationships: defaultdict[PurePath, set[PurePath]],
-        file: File
-) -> None:
-    """Adds a file and its associated metadata to the structural map.
+def _generate_directory_divs(
+    file: File,
+) -> list[tuple[PurePath, StructuralMapDiv]]:
+    """Generate `StructuralMapDiv`s for all directories in the `file`'s path.
 
-    :param path2div: A mapping from directory paths to their corresponding
-        `StructuralMapDiv` instances
-    :param directory_relationships: A mapping from parent directories to their
-        child directories
-    :param file: The `File` instance to be added to the structural map
+    :param file: A File instance.
+    :returns: A list of (directory path, div) tuples.
     """
-    digital_object = file.digital_object
-    digital_object_path = PurePath(digital_object.path)
+    digital_object_path = PurePath(file.digital_object.path)
+    divs = []
 
     for path in digital_object_path.parents:
         # Do not process path "."
         if path == PurePath("."):
             continue
-
-        # Create corresponding div for directories if they do not exist yet
-        if path not in path2div:
-            path2div[path] = StructuralMapDiv(
-                    div_type="directory",
-                    label=path.name
-                )
-
-        # Save directory relationships to be dealt with later
-        directory_relationships[path.parent].add(path)
-
-    # Create a wrapper div for the digital object and add it to parent div
-    wrapper_div = StructuralMapDiv(
-            div_type="file",
-            label=Path(digital_object.path).name
+        divs.append(
+            (path, StructuralMapDiv(div_type="directory", label=path.name))
         )
+
+    return divs
+
+
+def _generate_directory_relationships(
+    file: File,
+) -> list[tuple[PurePath, PurePath]]:
+    """Generate parent-child directory relationships from the `file`'s path.
+
+    :param file: A File instance.
+    :returns: A list of (parent path, child path) tuples.
+    """
+    digital_object_path = PurePath(file.digital_object.path)
+    relationships = []
+
+    for path in digital_object_path.parents:
+        # Do not process path "."
+        if path == PurePath("."):
+            continue
+        relationships.append((path.parent, path))
+
+    return relationships
+
+
+def _generate_file_wrapper_div(
+    file: File,
+) -> tuple[PurePath, StructuralMapDiv]:
+    """Create a wrapper div for the `file` and return it with its parent path.
+
+    :param file: A File instance.
+    :returns: A (parent path, wrapper div) tuple.
+    """
+    digital_object = file.digital_object
+    digital_object_path = PurePath(digital_object.path)
+
+    wrapper_div = StructuralMapDiv(
+        div_type="file", label=digital_object_path.name
+    )
     wrapper_div.add_digital_objects([digital_object])
     wrapper_div.add_metadata(file.descriptive_metadata)
+
     # Generate PREMIS event for importing metadata.
     # TODO: (TPASPKT-1389) This code expects that imported metadata is always
-    # descriptive. So if user imports some other medatata to file,
+    # descriptive. So if user imports some other metadata to file,
     # PREMIS event is not created. Is it correct?
     for metadata_element in file.descriptive_metadata:
         if isinstance(metadata_element, ImportedMetadata):
             wrapper_div.add_metadata([_create_metadata_import_event()])
 
-    path2div[digital_object_path.parent].divs.add(wrapper_div)
+    return digital_object_path.parent, wrapper_div
 
 
 def _create_metadata_import_event() -> DigitalProvenanceEventMetadata:
