@@ -484,9 +484,7 @@ class File:
         return scraper_result
 
     def _create_file_format_metadata(
-            self,
-            scraper_result: dict,
-            file_metadata: TechnicalFileObjectMetadata
+        self, scraper_result: dict, file_metadata: TechnicalFileObjectMetadata
     ) -> None:
         """Create and add file format specific metadata to `scraper_result`
 
@@ -494,8 +492,8 @@ class File:
         :param file_metadata: `TechnicalFileObjectMetadata` object
         """
         characteristics = self._create_technical_characteristics(
-                scraper_result["streams"][0]
-            )
+            scraper_result["streams"][0]
+        )
         if characteristics:
             self.digital_object.add_metadata([characteristics])
 
@@ -506,25 +504,23 @@ class File:
                 continue
 
             stream_metadata = TechnicalBitstreamObjectMetadata(
-                                file_format=stream["mimetype"],
-                                file_format_version=stream["version"]
-                            )
+                file_format=stream["mimetype"],
+                file_format_version=stream["version"],
+            )
 
             file_metadata.add_relationship(
-                    stream_metadata,
-                    relationship_type="structural",
-                    relationship_subtype="includes"
-                )
+                stream_metadata,
+                relationship_type="structural",
+                relationship_subtype="includes",
+            )
 
             # Add digital object streams
             digital_object_stream = mets_builder.DigitalObjectStream(
-                    metadata=[stream_metadata]
-                )
+                metadata=[stream_metadata]
+            )
 
             # Generate stream format specific metadata if applicable
-            characteristics = self._create_technical_characteristics(
-                    stream
-                )
+            characteristics = self._create_technical_characteristics(stream)
             if characteristics:
                 digital_object_stream.add_metadata([characteristics])
 
