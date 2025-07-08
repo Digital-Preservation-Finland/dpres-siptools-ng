@@ -686,13 +686,13 @@ class File:
             returned by :meth:`File.generate_technical_metadata`.
         :returns: File object.
         """
-        file_obj = cls(
+        file = cls(
             path=path,
             digital_object_path=digital_object_path,
             identifier=identifier,
         )
-        file_obj.generate_technical_metadata(scraper_result=scraper_result)
-        return file_obj
+        file.generate_technical_metadata(scraper_result=scraper_result)
+        return file
 
 
 def _create_event_with_agents(
