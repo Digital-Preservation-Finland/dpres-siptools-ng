@@ -22,3 +22,4 @@ git+https://gitlab.ci.csc.fi/dpres/addml.git@develop#egg=addml
 # file-scraper transitive dependencies
 git+https://gitlab.ci.csc.fi/dpres/fido.git@develop#egg=opf_fido
 git+https://gitlab.ci.csc.fi/dpres/ffmpeg-python.git#egg=ffmpeg_python
+git+https://gitlab.ci.csc.fi/dpres/dpres-file-formats.git@develop#egg=dpres_file_formats
