@@ -1,4 +1,5 @@
 """Module for Submission Information Package (SIP) handling."""
+import os
 import tarfile
 import tempfile
 from collections import defaultdict
@@ -203,7 +204,7 @@ class SIP:
     @classmethod
     def from_directory(
         cls,
-        directory_path: Union[Path, str],
+        directory_path: Union[os.PathLike, str],
         mets: mets_builder.METS,
     ) -> "SIP":
         """Generate a SIP object according to the contents of a directory.
@@ -224,8 +225,7 @@ class SIP:
         :returns: SIP object initialized according to the directory structure
             in the given path.
         """
-        if isinstance(directory_path, str):
-            directory_path = Path(directory_path)
+        directory_path = Path(directory_path)
         if not directory_path.exists():
             raise ValueError(f"Path '{str(directory_path)}' does not exist.")
         if not directory_path.is_dir():
