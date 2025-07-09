@@ -3,7 +3,7 @@ import os
 import tarfile
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path, PurePath
 from typing import Optional, Union
 
@@ -332,11 +332,11 @@ def _structural_map_from_directory_structure(
     directory_relationships = defaultdict(set)
 
     for file in files:
-        for path, div in _generate_directory_divs(file):
+        for path, div in _iter_directory_divs(file):
             if path not in path2div:
                 path2div[path] = div
 
-        for parent, child in _generate_directory_relationships(file):
+        for parent, child in _iter_directory_relationships(file):
             directory_relationships[parent].add(child)
 
         parent_path, wrapper_div = _generate_file_wrapper_div(file)
@@ -376,46 +376,36 @@ def _structural_map_from_directory_structure(
     return structural_map
 
 
-def _generate_directory_divs(
+def _iter_directory_divs(
     file: File,
-) -> list[tuple[PurePath, StructuralMapDiv]]:
-    """Generate `StructuralMapDiv`s for all directories in the `file`'s path.
+) -> Iterator[tuple[PurePath, StructuralMapDiv]]:
+    """Get `StructuralMapDiv`s for all directories in the `file`'s path.
 
     :param file: A File instance.
-    :returns: A list of (directory path, div) tuples.
+    :returns: Iterator of (directory path, div) tuples.
     """
     digital_object_path = PurePath(file.digital_object.path)
-    divs = []
-
     for path in digital_object_path.parents:
         # Do not process path "."
         if path == PurePath("."):
             continue
-        divs.append(
-            (path, StructuralMapDiv(div_type="directory", label=path.name))
-        )
-
-    return divs
+        yield (path, StructuralMapDiv(div_type="directory", label=path.name))
 
 
-def _generate_directory_relationships(
+def _iter_directory_relationships(
     file: File,
-) -> list[tuple[PurePath, PurePath]]:
-    """Generate parent-child directory relationships from the `file`'s path.
+) -> Iterator[tuple[PurePath, PurePath]]:
+    """Get parent-child directory relationships from the `file`'s path.
 
     :param file: A File instance.
-    :returns: A list of (parent path, child path) tuples.
+    :returns: Iterator of (parent path, child path) tuples.
     """
     digital_object_path = PurePath(file.digital_object.path)
-    relationships = []
-
     for path in digital_object_path.parents:
         # Do not process path "."
         if path == PurePath("."):
             continue
-        relationships.append((path.parent, path))
-
-    return relationships
+        yield (path.parent, path)
 
 
 def _generate_file_wrapper_div(
