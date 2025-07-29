@@ -10,6 +10,8 @@ git+https://gitlab.ci.csc.fi/dpres/dpres-signature.git@develop#egg=dpres-signatu
 git+https://gitlab.ci.csc.fi/dpres/file-scraper.git@develop#egg=file_scraper
 
 # TODO: The transitive dependencies can be dropped when we move to newer pip
+# file-scraper transitive dependencies
+git+https://gitlab.ci.csc.fi/dpres/dpx-validator.git@develop
 # mets_builder transitive dependencies
 git+https://gitlab.ci.csc.fi/dpres/mets.git@develop#egg=mets
 git+https://gitlab.ci.csc.fi/dpres/nisomix.git@develop#egg=nisomix

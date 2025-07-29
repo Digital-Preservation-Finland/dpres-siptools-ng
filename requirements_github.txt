@@ -9,6 +9,8 @@ git+https://github.com/Digital-Preservation-Finland/ffmpeg-python.git#egg=ffmpeg
 git+https://github.com/Digital-Preservation-Finland/fido.git#egg=opf_fido
 
 # TODO: These can be dropped when we move to newer pip
+# file-scraper transitive dependencies
+git+https://github.com/Digital-Preservation-Finland/dpx-validator.git
 # mets_builder transitive dependencies
 git+https://github.com/Digital-Preservation-Finland/xml-helpers.git#egg=xml_helpers
 git+https://github.com/Digital-Preservation-Finland/mets.git#egg=mets
