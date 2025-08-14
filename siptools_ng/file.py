@@ -571,7 +571,7 @@ class File:
         """
         event = _create_event_with_agents(
             scraper_result=scraper_result,
-            info_type="Scraper",
+            info_type="Extractor",
             event_type="metadata extraction",
             detail=(
                 "Technical metadata extraction as PREMIS metadata "

@@ -565,7 +565,7 @@ def test_generating_technical_metadata_for_csv_file(
             "digital objects",
             "PREMIS metadata successfully created from extracted technical "
             "metadata.",
-            {"file-scraper", "MagicTextScraper", "TextfileScraper"}
+            {"file-scraper", "MagicTextExtractor", "TextfileExtractor"}
         ),
         (
             "format identification",
@@ -627,7 +627,7 @@ def test_event(event_type, detail, outcome_detail, expected_linked_agents):
         ),
         # Some Scraper class with multiple used tools
         (
-            "MediainfoScraper",
+            "MediainfoExtractor",
             # match for example "Used tools (name-version):
             # pymediainfo-7.0.1, MediaInfoLib-24.12"
             "Used tools \(name-version\): "

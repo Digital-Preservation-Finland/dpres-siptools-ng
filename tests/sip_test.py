@@ -560,10 +560,10 @@ def test_metadata_deep_bundling(simple_mets):
     assert len({div for div in div1.divs if div.div_type == "directory"}) == 0
 
     # All files in div1 are text files, so they should be scraped
-    # with MagicTextScraper
+    # with MagicTextExtractor
     agent_names = {element.name for element in div1.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    assert agent_names == {"MagicTextScraper"}
+    assert agent_names == {"MagicTextExtractor"}
 
     event_types = {element.event_type for element in div1.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}
@@ -590,11 +590,11 @@ def test_metadata_deep_bundling(simple_mets):
     assert not _check_shared_metadata(div3)
     assert len({div for div in div3.divs if div.div_type == "file"}) == 2
     assert len({div for div in div3.divs if div.div_type == "directory"}) == 0
-    # All files in div3 are video files, so MediainfoScraper agent is
+    # All files in div3 are video files, so MediainfoExtractor agent is
     # bundled
     agent_names = {element.name for element in div3.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    expected_agent_names = {"MediainfoScraper"}
+    expected_agent_names = {"MediainfoExtractor"}
     assert agent_names >= expected_agent_names
 
     event_types = {element.event_type for element in div3.metadata
