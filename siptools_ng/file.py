@@ -300,6 +300,7 @@ class File:
         creating_application: Optional[str] = None,
         creating_application_version: Optional[str] = None,
         scraper_result: Optional[dict] = None,
+        skip_content_specific_metadata: Optional[bool] = False,
     ) -> dict:
         """Generate technical metadata for the digital object.
 
@@ -395,6 +396,13 @@ class File:
             creating_application has to be set as well.
         :param scraper_result: Scraper result to use with this file. When not
             set a new scraper result will be computed.
+        :param skip_content_specific_metadata: When set to True, skips
+            generation of content type specific metadata (MIX, audioMD,
+            videoMD, ADDML) regardless of file grade. This is useful
+            for broken files that are being preserved at bit-level.
+            When None (default), content-specific metadata is skipped
+            only for files with bit-level grades (BIT_LEVEL,
+            BIT_LEVEL_WITH_RECOMMENDED, UNACCEPTABLE).
 
         :returns: Dictionary containing scraper result data.
             This value can be passed to :meth:`File.with_scraper_result`
@@ -457,6 +465,8 @@ class File:
             BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED, UNACCEPTABLE
         ]
 
+        skip_metadata = skip_content_specific_metadata or is_bit_level
+
         if checksum:
             checksum = checksum.lower()
 
@@ -482,7 +492,7 @@ class File:
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
-        if not is_bit_level:
+        if not skip_metadata:
             self._create_file_format_metadata(scraper_result, file_metadata)
 
         # Document file scraping

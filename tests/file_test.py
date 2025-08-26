@@ -375,6 +375,55 @@ def test_generate_metadata_for_bit_level_video():
     assert tech_metadata.file_format == "video/quicktime"
 
 
+def test_skip_content_specific_metadata_for_broken_files():
+    """
+    Test that content type specific metadata (MIX, audioMD, videoMD, ADDML)
+    can be skipped for broken files using skip_content_specific_metadata parameter.
+    """
+    file = File(
+        path="tests/data/test_audio.wav",
+        digital_object_path="sip_data/test_audio.wav"
+    )
+    file.generate_technical_metadata(skip_content_specific_metadata=True)
+    assert not any(
+        metadata for metadata in file.metadata
+        if isinstance(metadata, TechnicalAudioMetadata)
+    )
+    
+    assert not any(
+        metadata for metadata in file.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+        and metadata.event_type == "metadata extraction"
+    )
+    tech_metadata = find_metadata(file, TechnicalFileObjectMetadata)
+    assert tech_metadata.file_format == "audio/x-wav"
+
+
+def test_skip_content_specific_metadata_false():
+    """
+    Test that when skip_content_specific_metadata=False, normal metadata
+    generation behavior is preserved.
+    """
+    file = File(
+        path="tests/data/test_audio.wav",
+        digital_object_path="sip_data/test_audio.wav"
+    )
+    file.generate_technical_metadata(skip_content_specific_metadata=False)
+    
+    audio_metadata = find_metadata(file, TechnicalAudioMetadata)
+    assert audio_metadata is not None
+    assert audio_metadata.codec_name == "PCM"
+
+    assert any(
+        metadata for metadata in file.metadata
+        if isinstance(metadata, DigitalProvenanceEventMetadata)
+        and metadata.event_type == "metadata extraction"
+    )
+
+    tech_metadata = find_metadata(file, TechnicalFileObjectMetadata)
+    assert tech_metadata.file_format == "audio/x-wav"
+
+
 def test_generate_metadata_with_predefined_values():
     """Test that it is possible to predefine values when generating metadata.
     """
