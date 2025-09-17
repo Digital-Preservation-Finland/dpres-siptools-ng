@@ -520,6 +520,9 @@ class File:
         :param file_metadata: `TechnicalFileObjectMetadata` object
         :param skip_metadata: Skip stream type specific metadata if True
         """
+        # The 0 stream can be a container or the only content stream
+        # (e.g. a sole audio stream). Its technical characteristics
+        # should not be created if skip_metadata is true.
         if not skip_metadata:
             characteristics = self._create_technical_characteristics(
                 scraper_result["streams"][0]
@@ -527,7 +530,7 @@ class File:
             if characteristics:
                 self.digital_object.add_metadata([characteristics])
 
-        # Create metadata for the streams of a given file
+        # Create metadata for the other streams of a given file
         for i, stream in enumerate(scraper_result["streams"].values()):
             if i == 0:
                 # Skip the container itself
@@ -549,6 +552,8 @@ class File:
                 metadata=[stream_metadata]
             )
 
+            # Skip creation of technical characteristics for streams
+            # if skip_metadata is true.
             if not skip_metadata:
                 # Generate stream format specific metadata if applicable
                 characteristics = self._create_technical_characteristics(
