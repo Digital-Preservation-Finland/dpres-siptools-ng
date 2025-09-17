@@ -492,8 +492,8 @@ class File:
 
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
-        if not skip_metadata:
-            self._create_file_format_metadata(scraper_result, file_metadata)
+        self._create_file_format_metadata(
+            scraper_result, file_metadata, skip_metadata)
 
         # Document file scraping
         if not checksum:
@@ -510,18 +510,22 @@ class File:
         return scraper_result
 
     def _create_file_format_metadata(
-        self, scraper_result: dict, file_metadata: TechnicalFileObjectMetadata
+        self, scraper_result: dict,
+        file_metadata: TechnicalFileObjectMetadata,
+        skip_metadata: bool
     ) -> None:
         """Create and add file format specific metadata to `scraper_result`
 
         :param scraper_result: Scraper result to use with this file.
         :param file_metadata: `TechnicalFileObjectMetadata` object
+        :param skip_metadata: Skip stream type specific metadata if True
         """
-        characteristics = self._create_technical_characteristics(
-            scraper_result["streams"][0]
-        )
-        if characteristics:
-            self.digital_object.add_metadata([characteristics])
+        if not skip_metadata:
+            characteristics = self._create_technical_characteristics(
+                scraper_result["streams"][0]
+            )
+            if characteristics:
+                self.digital_object.add_metadata([characteristics])
 
         # Create metadata for the streams of a given file
         for i, stream in enumerate(scraper_result["streams"].values()):
@@ -545,10 +549,12 @@ class File:
                 metadata=[stream_metadata]
             )
 
-            # Generate stream format specific metadata if applicable
-            characteristics = self._create_technical_characteristics(stream)
-            if characteristics:
-                digital_object_stream.add_metadata([characteristics])
+            if not skip_metadata:
+                # Generate stream format specific metadata if applicable
+                characteristics = self._create_technical_characteristics(
+                    stream)
+                if characteristics:
+                    digital_object_stream.add_metadata([characteristics])
 
             self.digital_object.add_streams([digital_object_stream])
 

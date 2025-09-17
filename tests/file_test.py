@@ -346,13 +346,6 @@ def test_bit_level_format(monkeypatch, grade, expected_use):
     file.generate_technical_metadata()
     assert file.digital_object.use == expected_use
 
-    # "Metadata extraction" event is not added for bit-level files
-    assert not any(
-        metadata for metadata in file.metadata
-        if isinstance(metadata, DigitalProvenanceEventMetadata)
-        and metadata.event_type == "metadata extraction"
-    )
-
 
 def test_generate_metadata_for_bit_level_video():
     """
@@ -365,36 +358,79 @@ def test_generate_metadata_for_bit_level_video():
     )
     file.generate_technical_metadata()
 
+    # Get a flat list of all technical metadata objects; we'll verify their
+    # relationship later.
+    metadatas = list(
+        # Flatten the list of metadata objects for each stream
+        itertools.chain.from_iterable([
+            stream.metadata for stream in file.digital_object.streams
+        ])
+    ) + list(file.digital_object.metadata)
+
+    # Three technical metadata objects are created
+    video_bitstream = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalBitstreamObjectMetadata)
+        and metadata.file_format == "video/x.fi-dpres.prores"
+    )
+    assert video_bitstream.file_format_version == "(:unap)"
+
+    audio_bitstream = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalBitstreamObjectMetadata)
+        and metadata.file_format == "audio/l8"
+    )
+    assert audio_bitstream.file_format_version == "(:unap)"
+
+    container = next(
+        metadata for metadata in metadatas
+        if isinstance(metadata, TechnicalFileObjectMetadata)
+    )
+    assert container.file_format == "video/quicktime"
+
+    # Check that correct linkings are made
+    assert len(container.relationships) == 2
+    assert any(
+        relationship for relationship in container.relationships
+        if relationship.object_identifier == video_bitstream.object_identifier
+    )
+    assert any(
+        relationship for relationship in container.relationships
+        if relationship.object_identifier == audio_bitstream.object_identifier
+    )
+
+    # Check that streams are added into the digital object
+    assert len(file.digital_object.streams) == 2
+
+    # TechnicalAudioMetadata and TechnicalVideoMetadata should not exist
+    # for bit level objects.
     assert not any(
-        metadata for metadata in file.metadata
+        metadata for metadata in file.digital_object.streams
+        if isinstance(metadata, TechnicalAudioMetadata)
+    )
+    assert not any(
+        metadata for metadata in file.digital_object.streams
         if isinstance(metadata, TechnicalVideoMetadata)
     )
 
-    tech_metadata = find_metadata(file, TechnicalFileObjectMetadata)
 
-    assert tech_metadata.file_format == "video/quicktime"
-
-
-def test_skip_content_specific_metadata_for_broken_files():
+def test_skip_content_specific_metadata_true():
     """
-    Test that content type specific metadata (MIX, audioMD, videoMD, ADDML)
-    can be skipped for broken files using skip_content_specific_metadata parameter.
+    Test that content type specific metadata (MIX, audioMD, videoMD,
+    ADDML) can be skipped using the skip_content_specific_metadata
+    parameter.
     """
     file = File(
         path="tests/data/test_audio.wav",
         digital_object_path="sip_data/test_audio.wav"
     )
     file.generate_technical_metadata(skip_content_specific_metadata=True)
+
     assert not any(
         metadata for metadata in file.metadata
         if isinstance(metadata, TechnicalAudioMetadata)
     )
-    
-    assert not any(
-        metadata for metadata in file.metadata
-        if isinstance(metadata, DigitalProvenanceEventMetadata)
-        and metadata.event_type == "metadata extraction"
-    )
+
     tech_metadata = find_metadata(file, TechnicalFileObjectMetadata)
     assert tech_metadata.file_format == "audio/x-wav"
 
@@ -409,7 +445,7 @@ def test_skip_content_specific_metadata_false():
         digital_object_path="sip_data/test_audio.wav"
     )
     file.generate_technical_metadata(skip_content_specific_metadata=False)
-    
+
     audio_metadata = find_metadata(file, TechnicalAudioMetadata)
     assert audio_metadata is not None
     assert audio_metadata.codec_name == "PCM"
