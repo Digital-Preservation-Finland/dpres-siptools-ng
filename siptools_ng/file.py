@@ -465,7 +465,8 @@ class File:
             BIT_LEVEL, BIT_LEVEL_WITH_RECOMMENDED, UNACCEPTABLE
         ]
 
-        skip_metadata = skip_content_specific_metadata or is_bit_level
+        skip_content_type_metadata = (
+            skip_content_specific_metadata or is_bit_level)
 
         if checksum:
             checksum = checksum.lower()
@@ -493,7 +494,7 @@ class File:
         # Create file format specific metadata (eg. AudioMD, MixMD,
         # VideoMD)
         self._create_file_format_metadata(
-            scraper_result, file_metadata, skip_metadata)
+            scraper_result, file_metadata, skip_content_type_metadata)
 
         # Document file scraping
         if not checksum:
@@ -512,18 +513,19 @@ class File:
     def _create_file_format_metadata(
         self, scraper_result: dict,
         file_metadata: TechnicalFileObjectMetadata,
-        skip_metadata: bool
+        skip_content_type_metadata: bool
     ) -> None:
         """Create and add file format specific metadata to `scraper_result`
 
         :param scraper_result: Scraper result to use with this file.
         :param file_metadata: `TechnicalFileObjectMetadata` object
-        :param skip_metadata: Skip stream type specific metadata if True
+        :param skip_content_type_metadata: Skip content type specific
+            technical metadata (e.g. MIX, audioMD, ...) if True
         """
         # The 0 stream can be a container or the only content stream
         # (e.g. a sole audio stream). Its technical characteristics
-        # should not be created if skip_metadata is true.
-        if not skip_metadata:
+        # should not be created if skip_content_type_metadata is true.
+        if not skip_content_type_metadata:
             characteristics = self._create_technical_characteristics(
                 scraper_result["streams"][0]
             )
@@ -553,8 +555,8 @@ class File:
             )
 
             # Skip creation of technical characteristics for streams
-            # if skip_metadata is true.
-            if not skip_metadata:
+            # if skip_content_type_metadata is true.
+            if not skip_content_type_metadata:
                 # Generate stream format specific metadata if applicable
                 characteristics = self._create_technical_characteristics(
                     stream)
