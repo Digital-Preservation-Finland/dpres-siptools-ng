@@ -320,7 +320,10 @@ class File:
         :param file_format: Overrides scraped file format of the object
             with a predefined value. Mimetype of the file, e.g.
             'image/tiff'. When set, predef_file_format_version has to be
-            set as well.
+            set as well. Given file_format must be included in the list of
+            recommended file formats or acceptable file formats for transfer.
+            The list of allowed fileformats are located at:
+            https://digitalpreservation.fi/en/specifications/fileformats
         :param file_format_version: Overrides scraped file format
             version of the object with a predefined value. Version
             number of the file format, e.g. '1.2'. When set,

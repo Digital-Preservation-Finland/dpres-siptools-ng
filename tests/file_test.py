@@ -469,8 +469,8 @@ def test_generate_metadata_with_predefined_values():
     )
 
     file.generate_technical_metadata(
-        file_format="predefined_file_format",
-        file_format_version="predefined_file_format_version",
+        file_format="text/plain",
+        file_format_version="",
         checksum_algorithm="SHA-256",
         checksum="predefined_checksum",
         file_created_date="predefined_file_created_date",
@@ -489,8 +489,8 @@ def test_generate_metadata_with_predefined_values():
         if isinstance(data, TechnicalFileObjectMetadata)
     ][0]
 
-    assert metadata.file_format == "predefined_file_format"
-    assert metadata.file_format_version == "predefined_file_format_version"
+    assert metadata.file_format == "text/plain"
+    assert metadata.file_format_version == "(:unap)"
     assert metadata.checksum_algorithm.value == "SHA-256"
     assert metadata.checksum == "predefined_checksum"
     assert metadata.file_created_date == "predefined_file_created_date"
