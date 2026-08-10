@@ -563,7 +563,7 @@ def test_metadata_deep_bundling(simple_mets):
     # with MagicTextExtractor
     agent_names = {element.name for element in div1.metadata
                    if isinstance(element, DigitalProvenanceAgentMetadata)}
-    assert agent_names == {"MagicTextExtractor"}
+    assert agent_names == {"MagicTextExtractor", "JHoveUtf8Extractor"}
 
     event_types = {element.event_type for element in div1.metadata
                    if isinstance(element, DigitalProvenanceEventMetadata)}

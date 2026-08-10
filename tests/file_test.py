@@ -650,7 +650,7 @@ def test_generating_technical_metadata_for_csv_file(
             "digital objects",
             "PREMIS metadata successfully created from extracted technical "
             "metadata.",
-            {"file-scraper", "MagicTextExtractor", "TextfileExtractor"}
+            {"file-scraper", "MagicTextExtractor", "TextfileExtractor", "JHoveUtf8Extractor"}
         ),
         (
             "format identification",

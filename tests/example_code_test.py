@@ -30,8 +30,8 @@ def test_example_automated_sip_creation(example_code, output_file,
     # Check that output file exists
     assert Path(doc_path / output_file).is_file()
 
-    schema_checker_path = shutil.which("check-xml-schema-features-3")
-    schematron_checker_path = shutil.which("check-xml-schematron-features-3")
+    schema_checker_path = shutil.which("check-xml-schema-features")
+    schematron_checker_path = shutil.which("check-xml-schematron-features")
 
     if not schema_checker_path:
         pytest.skip("dpres-ipt, skipping METS validation")
